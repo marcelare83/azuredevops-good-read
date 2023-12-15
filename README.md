@@ -24,15 +24,19 @@
 - no-build, no-restore, vsts-feed
 
 ## Performance
-### General tips & tricks
-- When possible, always run the pipeline on a Linux-based agent instead of Windows. In my experience this can reduce the runtime by up to 50%, depending on the tasks:
+### Run on Linux-based agent when possible
+When possible, always run the pipeline on a Linux-based agent instead of Windows. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
+
 ```
 pool:
   vmImage: "ubuntu-latest"
 ```
 ("ubuntu-latest" is also the default Agent image in Azure DevOps, so if you don't specify anything this will be selected)
 
-- Make sure you are not accidentally building a project/solution multiple times - Because of the way that the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) works for dotnet tasks, it is very easy to for example first build a solution with a project and a test project in one step, and then run the tests using the `DotNetCoreCLI@2` task, not knowing that this will trigger an additional unnecessary build of that test project. A way to get around this is to either (a) skip the first build, and simply run the test task as this will also build and restore the project, or (b) keep the separate build task and then call the test task with the `--no-build` argument:
+### Implicit restore & build
+Make sure you are not accidentally building a project/solution multiple times - Because of the way that the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) works for dotnet tasks it is very easy to, say, first build a solution with a project and a test project in one step, and then run the tests using the `DotNetCoreCLI@2` task, not knowing that this will trigger an additional unnecessary build of that test project. 
+
+A way to get around this is to either (a) skip the first build step and simply run the test task as this will also build and restore the project, or (b) keep the separate build task and then call the test task with the `--no-build` argument:
 
 ```
 - task: DotNetCoreCLI@2
@@ -43,6 +47,7 @@ pool:
     arguments: >
       --no-build
 ```
+
 The `--no-build` flag will skip building the test project before running it, it also implicitly sets the --no-restore flag. See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test.
 
 ### "PublishCodeCoverageResults" task
