@@ -338,7 +338,7 @@ We also use the `--no-build` argument when running the tests:
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines
 
 ### > Running tests after building a solution with both .NET Core & .NET Framework-based test projects
-If you are running a pipeline that is building a solution with a mix of .NET Core & .NET Framework projects then you can run into issues if you try to run the [`VSTest` task](https://learn.microsoft.com/sv-se/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines) after that. 
+If you are running a pipeline that is building a solution with a mix of .NET Core & .NET Framework projects then you can run into issues if you run the [`VSTest` task](https://learn.microsoft.com/sv-se/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines) after that. 
 
 This seems to be because the task gets "confused" about what test adapter to use during this run. A way to solve this is to utilize the `pathtoCustomTestAdapters` property and point to one of the .NET Framework projects in the solution (it doesn't matter which one):
 
