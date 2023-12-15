@@ -12,7 +12,7 @@ pool:
 (`ubuntu-latest` is also the default Agent image in Azure DevOps, so if you don't specify anything else this will be used)
 
 ### > Run as many jobs in parallel as you can
-One good way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job.
+A great way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job.
 
 For example you can have one job that builds the main source code and another job that runs the tests and a third job that does some kind of analysis.
 
