@@ -126,6 +126,11 @@ This will result in you being able to take advantage of the faster publishing sp
 ## SonarQube
 
 ## .NET
+### > Visual Studio-based tasks vs. .NET-based tasks
+- https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vsbuild-v1?view=azure-pipelines
+- https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines
+- https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines
+
 ### Implicit restore & build
 - https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore
 
