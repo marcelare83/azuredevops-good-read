@@ -9,7 +9,7 @@ pool:
   vmImage: "ubuntu-latest"
 ```
 
-("ubuntu-latest" is also the default Agent image in Azure DevOps, so if you don't specify anything this will be selected)
+("ubuntu-latest" is also the default Agent image in Azure DevOps, so if you don't specify anything else this will be used)
 
 ### Implicit restore & build
 Make sure you are not accidentally building a project/solution multiple times - Because of the way that the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) works for dotnet tasks it is very easy to, say, first build a solution with a project and a test project in one step, and then run the tests using the `DotNetCoreCLI@2` task, not knowing that this will trigger an additional unnecessary build of that test project. 
