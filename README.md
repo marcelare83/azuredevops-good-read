@@ -12,9 +12,22 @@ pool:
 (`ubuntu-latest` is also the default Agent image in Azure DevOps, so if you don't specify anything else this will be used)
 
 ### > Run as many jobs in parallel as you can
-A great way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job.
+A great way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job. A `job` in Azure DevOps will automatically run on a separate agent, and thus run in parallel, as opposed to a separate step or task that will run sequentially on the same agent. In the following example, Job A & Job B will run at the same time:
 
-For example you can have one job that builds the main source code and another job that runs the tests and a third job that does some kind of analysis.
+```yaml
+jobs:
+- job: A
+  steps:
+  - bash: echo "A"
+
+- job: B
+  steps:
+  - bash: echo "B"
+```
+
+ [You can find more info about how Jobs work here](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/phases?view=azure-devops&tabs=yaml).
+
+This means you can for example have one job that builds the main source code and another job that runs the tests and a third job that does some kind of analysis, and they can all run simultaneously.
 
 You can then have a final step that utilizes the [`dependsOn`](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions?view=azure-devops&tabs=yaml%2Cstages#use-the-output-variable-from-a-job-in-a-condition-in-a-subsequent-job) parameter to make sure a final publish step does not run until all the other jobs have finished successfully.
 
