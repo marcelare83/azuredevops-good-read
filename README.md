@@ -9,7 +9,7 @@ pool:
   vmImage: "ubuntu-latest"
 ```
 
-("ubuntu-latest" is also the default Agent image in Azure DevOps, so if you don't specify anything else this will be used)
+(`ubuntu-latest` is also the default Agent image in Azure DevOps, so if you don't specify anything else this will be used)
 
 ### > Implicit restore & build
 Make sure you are not accidentally building a project/solution multiple times - Because of the way that the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) works for dotnet tasks it is very easy to, say, first build a solution with a project and a test project in one step, and then run the tests using the `DotNetCoreCLI@2` task, not knowing that this will trigger an additional unnecessary build of that test project. 
@@ -55,7 +55,7 @@ Publishing the test results directly form the "DotNetCoreCLI@2" task like this i
 
 An alternative to this is to instead produce the code results with the `.coverage` format, publish it, and then in a separate task re-format the results to XML. One way to do is to use the [`dotnet-coverage` tool](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage). Specific info about re-formatting and/or merging reports using this tool can be found [here](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage#merge-code-coverage-reports).
 
-Bringing both these things together would look like this:
+Combining both these things could look like this:
 
 ```
 - task: DotNetCoreCLI@2
@@ -95,12 +95,24 @@ One way to get around this issue is to set the ["workingDirectory" parameter](ht
     script: dotnet tool install dotnet-coverage --global --ignore-failed-sources
 ```
 
-### The "PublishPipelineArtifact" task doesn't flatten folders
+### > The "PublishPipelineArtifact" task doesn't flatten folders
+If you have a need to publish and download artifacts between different jobs in a pipeline you can use the [PublishPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-pipeline-artifact-v1?view=azure-pipelines) and [DownloadPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/download-pipeline-artifact-v2?view=azure-pipelines) tasks in Azure DevOps. One thing to keep in mind when doing this is that the "PublishPipelineArtifact" task doesn't flatten folders, i.e. if you download an artifact "MyCoolArtifact1" & "MyCoolArtifact2" with some arbitrary files into "MyFolder", then it will result in the files being put into `MyFolder/MyCoolArtifact1` and `MyFolder/MyCoolArtifact2` instead of directly into `MyFolder/...`.
 
-- i.e. if you download an artifact "MyCoolArtifact1" &  "MyCoolArtifact2" with some arbitrary files into "MyFolder", then it will result in MyFolder/MyCoolArtifact1/... & MyFolder/MyCoolArtifact1/...
-- We can potentially solve this by using the "CopyFiles@2" task w/ the `flattenFolders` parameter set to true
+One way solve this is to first download the pipeline artifacts and then use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/copy-files-v2?view=azure-pipelines&tabs=yaml) task w/ the `flattenFolders` parameter set to `true`:
 
-### "CopyFiles" task
+```
+- task: CopyFiles@2
+  displayName: "Copy test result files to $(Agent.TempDirectory)/TestResults"
+  inputs:
+    SourceFolder: "MyFolder"
+    Contents: "**"
+    TargetFolder: "MyFolder"
+    flattenFolders: true # <----
+```
+
+`Contents: "**"` copies all files in the specified source folder and all files in all sub-folders. Note that this is the default value, I've explicitly added it here for the sake of clarity.
+
+### > "CopyFiles" doesn't copy files as expected
 - CopyFiles@2 task gotcha when trying to copy specific file types using "Contents":
 - https://stackoverflow.com/a/70874760
 
@@ -112,6 +124,7 @@ One way to get around this issue is to set the ["workingDirectory" parameter](ht
 - no-build, no-restore, vsts-feed
 
 ## Code coverage
+- parallell test execution
 - "publishTestResults"
 - "testRunTitle"
 
