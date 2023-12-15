@@ -11,74 +11,20 @@ pool:
 
 (`ubuntu-latest` is also the default Agent image in Azure DevOps, so if you don't specify anything else this will be used)
 
-### > Implicit restore & build
-Make sure you are not accidentally building a project/solution multiple times - Because of the way that the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) works for dotnet tasks it is very easy to, say, first build a solution with a project and a test project in one step, and then run the tests using the `DotNetCoreCLI@2` task, not knowing that this will trigger an additional unnecessary build of that test project. 
+### > Run as many jobs in parallel as you can
+One good way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job.
 
-A way to get around this is to either (a) skip the first build step and simply run the test task as this will also build and restore the project, or (b) keep the separate build task and then call the test task with the `--no-build` argument:
+For example you can have one job that builds the main source code and another job that runs the tests and a third job that does some kind of analysis.
 
-```yaml
-- task: DotNetCoreCLI@2
-  displayName: "🔬 dotnet test"
-  inputs:
-    command: "test"
-    projects: "**/MyTestProject.csproj"
-    arguments: >
-      --no-build # <----
-```
+You can then have a final step that utilizes the [`dependsOn`](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions?view=azure-devops&tabs=yaml%2Cstages#use-the-output-variable-from-a-job-in-a-condition-in-a-subsequent-job) parameter to make sure a final publish step does not run until all the other jobs have finished successfully.
 
-The `--no-build` flag will skip building the test project before running it, it also implicitly sets the --no-restore flag. 
-- See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test
+The only thing that limits parallelization in this way is more or less if there are dependencies between steps of a specific pipeline that cannot be run in a different job (which runs on a different agent). Keep in mind thought that you can utilize the [PublishPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-pipeline-artifact-v1?view=azure-pipelines) and [DownloadPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/download-pipeline-artifact-v2?view=azure-pipelines) tasks to publish some kind of result from one job and download it in another.
 
-### > Avoid the "PublishCodeCoverageResults" task
-The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in the pipeline run summary in Azure DevOps:
+It is also easier to run more jobs in parallel if your .NET code is using .NET Core and not .NET Framework because it is possible to build individual .NET Core projects in the pipeline without having to build everything in a solution, which is not the case for .NET Framework. This means that if you have let's say `Project1.csproj` and `TestProject1.csproj` that are both part of `MySolution.sln`, you can create two jobs that builds that specific `.csproj` file and not the entire solution, and then run them in parallel.
 
-![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/e806df44-f98d-4d44-805b-9d3c1c256a30)
+Keep in mind that as you increase the number of parallel jobs that are being run you might start getting into issues where there are no available agents. In this case you can go to Project Settings > Pipelines > Parallel jobs and increase the number there (if you're willing to pay for it). It costs [$40 per additional Microsoft-hosted agent](https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/).
 
-The issue is that this task is so incredibly slow that it basically makes it unusable unless the amount of files is very small. This is a known issue and has [been reported years ago](https://github.com/microsoft/azure-pipelines-tasks/issues/4945) but not fixed (yet).
-
-An alternative to this stand-alone task you can use if you are running a .NET test task is to specify that code coverage should be collected and published during the test run, like this:
-
-```yaml
-- task: DotNetCoreCLI@2
-  displayName: "🔬 dotnet test"
-  inputs:
-    command: "test"
-    projects: "**/MyTestProject.csproj"
-    publishTestResults: true # <----
-    arguments: >
-      --collect "Code Coverage" # <----
-```
-
-Note that the [default value for the "publishTestResults" parameter is `true`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=publishTestResults%20%2D-,Publish%20test%20results%20and%20code%20coverage,-boolean.%20Optional.%20Use) and can therefore be skipped. I've explicitly added it here for the sake of clarity.
-
-Publishing the test results directly form the "DotNetCoreCLI@2" task like this is **much, much faster** and I don't exactly know why. However, the "built-in" code coverage reporting only handles the binary `.coverage` format (which is what is produced if you don't specify another format in the `--collect` argument). Therefore, if you are instead producing code coverage results with some kind of XML-based format ([using "Coverlet" for example](https://github.com/coverlet-coverage/coverlet?tab=readme-ov-file#usage)), then you need to use the stand-alone publish task.
-
-An alternative to this is to instead produce the code results with the `.coverage` format, publish it, and then in a separate task re-format the results to XML. One way to do is to use the [`dotnet-coverage` tool](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage). Specific info about re-formatting and/or merging reports using this tool can be found [here](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage#merge-code-coverage-reports).
-
-Combining both these things could look like this:
-
-```yaml
-- task: DotNetCoreCLI@2
-  displayName: "🔬 dotnet test"
-  inputs:
-    command: "test"
-    projects: "**/MyTestProject.csproj"
-    publishTestResults: true
-    arguments: >
-      --collect "Code Coverage"
-
-- task: PowerShell@2
-  displayName: "Install the 'dotnet-coverage' tool"
-  inputs:
-    targetType: inline
-    script: dotnet tool install dotnet-coverage --global --ignore-failed-sources
-
-- script: >
-    dotnet-coverage merge -o $(Agent.TempDirectory)/coverage.xml -f xml $(Agent.TempDirectory)/*/*.coverage
-  displayName: "Re-format code coverage file(s) to XML"
-```
-
-This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/6df852e3-f12e-4e79-9072-c2858490edeb)
 
 ### > Limit frequency of static code analysis runs
 If you are using some kind of tool for static code analysis, such as SonarQube, keep in mind that doing this on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis (at least when it comes to SonarQube). Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
@@ -158,21 +104,74 @@ and will show up like this in the UI when queueing a new pipeline build:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/92a7569e-bc34-4b2f-bd08-8a19269d7289)
 
-### > Run as many jobs in parallel as you can
-One good way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job.
+### > Implicit restore & build
+Make sure you are not accidentally building a project/solution multiple times - Because of the way that the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) works for dotnet tasks it is very easy to, say, first build a solution with a project and a test project in one step, and then run the tests using the `DotNetCoreCLI@2` task, not knowing that this will trigger an additional unnecessary build of that test project. 
 
-For example you can have one job that builds the main source code and another job that runs the tests and a third job that does some kind of analysis.
+A way to get around this is to either (a) skip the first build step and simply run the test task as this will also build and restore the project, or (b) keep the separate build task and then call the test task with the `--no-build` argument:
 
-You can then have a final step that utilizes the [`dependsOn`](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions?view=azure-devops&tabs=yaml%2Cstages#use-the-output-variable-from-a-job-in-a-condition-in-a-subsequent-job) parameter to make sure a final publish step does not run until all the other jobs have finished successfully.
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/MyTestProject.csproj"
+    arguments: >
+      --no-build # <----
+```
 
-The only thing that limits parallelization in this way is more or less if there are dependencies between steps of a specific pipeline that cannot be run in a different job (which runs on a different agent). Keep in mind thought that you can utilize the [PublishPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-pipeline-artifact-v1?view=azure-pipelines) and [DownloadPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/download-pipeline-artifact-v2?view=azure-pipelines) tasks to publish some kind of result from one job and download it in another.
+The `--no-build` flag will skip building the test project before running it, it also implicitly sets the --no-restore flag. 
+- See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test
 
-It is also easier to run more jobs in parallel if your .NET code is using .NET Core and not .NET Framework because it is possible to build individual .NET Core projects in the pipeline without having to build everything in a solution, which is not the case for .NET Framework. This means that if you have let's say `Project1.csproj` and `TestProject1.csproj` that are both part of `MySolution.sln`, you can create two jobs that builds that specific `.csproj` file and not the entire solution, and then run them in parallel.
+### > Avoid the "PublishCodeCoverageResults" task
+The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in the pipeline run summary in Azure DevOps:
 
-Keep in mind that as you increase the number of parallel jobs that are being run you might start getting into issues where there are no available agents. In this case you can go to Project Settings > Pipelines > Parallel jobs and increase the number there (if you're willing to pay for it). It costs [$40 per additional Microsoft-hosted agent](https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/).
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/e806df44-f98d-4d44-805b-9d3c1c256a30)
 
-![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/6df852e3-f12e-4e79-9072-c2858490edeb)
+The issue is that this task is so incredibly slow that it basically makes it unusable unless the amount of files is very small. This is a known issue and has [been reported years ago](https://github.com/microsoft/azure-pipelines-tasks/issues/4945) but not fixed (yet).
 
+An alternative to this stand-alone task you can use if you are running a .NET test task is to specify that code coverage should be collected and published during the test run, like this:
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/MyTestProject.csproj"
+    publishTestResults: true # <----
+    arguments: >
+      --collect "Code Coverage" # <----
+```
+
+Note that the [default value for the "publishTestResults" parameter is `true`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=publishTestResults%20%2D-,Publish%20test%20results%20and%20code%20coverage,-boolean.%20Optional.%20Use) and can therefore be skipped. I've explicitly added it here for the sake of clarity.
+
+Publishing the test results directly form the "DotNetCoreCLI@2" task like this is **much, much faster** and I don't exactly know why. However, the "built-in" code coverage reporting only handles the binary `.coverage` format (which is what is produced if you don't specify another format in the `--collect` argument). Therefore, if you are instead producing code coverage results with some kind of XML-based format ([using "Coverlet" for example](https://github.com/coverlet-coverage/coverlet?tab=readme-ov-file#usage)), then you need to use the stand-alone publish task.
+
+An alternative to this is to instead produce the code results with the `.coverage` format, publish it, and then in a separate task re-format the results to XML. One way to do is to use the [`dotnet-coverage` tool](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage). Specific info about re-formatting and/or merging reports using this tool can be found [here](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage#merge-code-coverage-reports).
+
+Combining both these things could look like this:
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/MyTestProject.csproj"
+    publishTestResults: true
+    arguments: >
+      --collect "Code Coverage"
+
+- task: PowerShell@2
+  displayName: "Install the 'dotnet-coverage' tool"
+  inputs:
+    targetType: inline
+    script: dotnet tool install dotnet-coverage --global --ignore-failed-sources
+
+- script: >
+    dotnet-coverage merge -o $(Agent.TempDirectory)/coverage.xml -f xml $(Agent.TempDirectory)/*/*.coverage
+  displayName: "Re-format code coverage file(s) to XML"
+```
+
+This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
 
 ## Gotchas
 ### > Running "dotnet tool install" on Linux
