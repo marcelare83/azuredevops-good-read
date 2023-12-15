@@ -257,9 +257,80 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
 - "testRunTitle"
 - 
 ### > Issues related to specifying a local NuGet feed in `nuget.config`
-If you have specified a 
+If you have specified a local NuGet feed in a `nuget.config` file in the root of your repository, like this:
 
-- no-build, no-restore, vsts-feed
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="Local" value="%USERPROFILE%\.viedoc\local\packages\nuget" /> # <----
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+```
+
+you will run into issues whenever you try to build any project in this repository in a pipeline. This is because of the implementation of the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) that triggers whenever you build a `.csproj`. This restore step will [default to using the feed information provided by the `nuget.config` file](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-restore#specify-feeds).
+
+What this leads to is that whenever you try to trigger a task that builds or runs tests using your .NET projects, e.g.:
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "🏗 dotnet build"
+  inputs:
+    command: "build"
+    projects: "**/ProjectToBuild.csproj"
+
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/ProjectToTest.csproj"
+```
+
+then the implicit restore will kick in and try to find the local feed specified in the `nuget.config` file, which it is unable to do, so the task fails.
+
+One way to solve this is to separate the `restore`, `build` and `test` steps. This allows you to specify what feed should be used in the `restore` step, and then specify that no restore should be performed in the subsequent steps.
+
+We specify the organization feed to use using the [`vstsFeed` parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=vstsFeed%20%2D-,Use%20packages%20from%20this%20Azure%20Artifacts%20feed,-Input%20alias%3A):
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "♻ dotnet restore"
+  inputs:
+    command: "restore"
+    projects: "**/MyProject.csproj"
+    vstsFeed: "ProjectName/FeedName" # <----
+```
+
+We then use the `--no-restore` argument to skip the implicit restore:
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "🏗 dotnet build"
+  inputs:
+    command: "build"
+    projects: "**/MyProject.csproj"
+    arguments: >
+      --no-restore
+```
+
+We also use the `--no-build` argument when running the tests:
+
+```yaml
+# The `--no-build` flag will skip building the test project before running it (since we already built in the previous step)
+# It also implicitly sets the --no-restore flag
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/MyProject.csproj"
+    arguments: >
+      --no-build
+```
+
+- [More info](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#why-is-my-build-publish-or-test-step-failing-to-restore-packages)
 
 ### > Visual Studio-based tasks vs. .NET-based tasks
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vsbuild-v1?view=azure-pipelines
