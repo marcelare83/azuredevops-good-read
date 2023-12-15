@@ -313,7 +313,7 @@ We then use the `--no-restore` argument to skip the implicit restore:
     command: "build"
     projects: "**/MyProject.csproj"
     arguments: >
-      --no-restore
+      --no-restore # <----
 ```
 
 We also use the `--no-build` argument when running the tests:
@@ -327,7 +327,7 @@ We also use the `--no-build` argument when running the tests:
     command: "test"
     projects: "**/MyProject.csproj"
     arguments: >
-      --no-build
+      --no-build # <----
 ```
 
 - [More info](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#why-is-my-build-publish-or-test-step-failing-to-restore-packages)
@@ -351,7 +351,7 @@ This seems to be because the task gets "confused" about what test adapter to use
       !**/obj/**
     platform: "AnyCPU"
     configuration: "Release"
-    pathtoCustomTestAdapters: "Tests/MyTestProject/bin/Release/net472/
+    pathtoCustomTestAdapters: "Tests/MyTestProject/bin/Release/net472/ # <----
 ```
 
 ## General Azure DevOps pipeline tips
