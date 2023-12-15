@@ -80,6 +80,86 @@ Combining both these things could look like this:
 
 This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
 
+### > Limit frequency of SonarQube analysis runs
+Running the SonarQube analysis on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis. Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
+
+One way to achieve this is to create a script like this:
+
+```ps
+# SonarQube analysis will be run if any of these are true:
+# 1. The runSonarQube parameter is manually set to true.
+# 2. The build is for either of these branches: dev, master, Releases/*.
+# 3. The build is for a pull request to either of these branches: dev, master, Releases/*.
+
+Param(
+    [string]$runSonarQubeParameter,
+    [string]$buildSourceBranch,
+    [string]$pullRequestTargetBranch
+)
+
+$branchRequiresAnalysis = $buildSourceBranch -eq 'dev' -or $buildSourceBranch -eq 'master' -or $buildSourceBranch -like 'Releases/*'
+$prTargetRequiresAnalysis = $pullRequestTargetBranch -eq 'dev' -or $pullRequestTargetBranch -eq 'master' -or $pullRequestTargetBranch -like 'Releases/*'
+
+if ($branchRequiresAnalysis) {
+    Write-Host "Branch requires SonarQube analysis."
+}
+
+if ($prTargetRequiresAnalysis) {
+    Write-Host "Pull request target requires SonarQube analysis."
+}
+
+if ($runSonarQubeParameter -eq "True") {
+    Write-Host "SonarQube analysis is manually requested."
+}
+
+$sonarQubeShouldBeRun = $runSonarQubeParameter -eq "True" -or $branchRequiresAnalysis -or $prTargetRequiresAnalysis
+
+if (!$sonarQubeShouldBeRun) {
+    Write-Host "##[warning] NOTE: SonarQube analysis will be skipped for this build!"
+}
+
+# Set "SonarQubeShouldBeRun" variable to be used in rest of the pipeline
+# See: https://learn.microsoft.com/en-us/azure/devops/pipelines/process/set-variables-scripts?view=azure-devops&tabs=powershell
+Write-Host "##vso[task.setvariable variable=sonarQubeShouldBeRun]$sonarQubeShouldBeRun"
+```
+This script can then be called like this:
+
+```yaml
+# This script will set the variable "sonarQubeShouldBeRun" to true or false
+- task: PowerShell@2
+  displayName: Determine if SonarQube analysis should be run
+  inputs:
+    targetType: filePath
+    filePath: build/scripts/Determine-SonarQubeAnalysisShouldBeRun.ps1
+    arguments: "${{ parameters.runSonarQube }} '$(Build.SourceBranchName)' '$(System.PullRequest.TargetBranchName)'"
+```
+
+and the `sonarQubeShouldBeRun` variable can be used to control the analysis steps like this:
+
+```yaml
+- task: SonarQubeAnalyze@5
+  displayName: "SonarQube: Run analysis"
+  condition: and(succeeded(), eq(variables.sonarQubeShouldBeRun, true))
+```
+
+This will make sure that the analysis is only run for the main branches that require this analysis as well as any pull requests that target those branches. On top of this it also takes into account a manual flag "runSonarQubeParameter" that can be used when an analysis run is required outside of these situations.
+
+This parameter can be set like this:
+
+```yaml
+parameters:
+  - name: runSonarQube
+    type: boolean
+    default: false
+    displayName: Run SonarQube analysis
+```
+
+and will show up like this in the UI when queueing a new pipeline build:
+
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/92a7569e-bc34-4b2f-bd08-8a19269d7289)
+
+### > Run as many jobs in parallel as you can
+
 ## Gotchas
 ### > Running "dotnet tool install" on Linux
 If you run the `dotnet tool install` command in a task on an agent running on a Linux-based OS w/ a project that has multiple project files you might run into issues where the task fails to complete with an error message along the lines of the folder containing multiple project files. I think this is related to the fact that .NET Core CLI will automatically restore any .NET projects in the working directory and does not like if there are multiple of them. The process of installing a new dotnet tool does not require this to happen, so it is ostensibly a bug, but I might be missing something.
