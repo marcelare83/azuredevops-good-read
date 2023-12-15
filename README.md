@@ -29,7 +29,7 @@ A way to get around this is to either (a) skip the first build step and simply r
 The `--no-build` flag will skip building the test project before running it, it also implicitly sets the --no-restore flag. 
 - See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test
 
-### Avoid the "PublishCodeCoverageResults" task
+### > Avoid the "PublishCodeCoverageResults" task
 The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in the pipeline run summary in Azure DevOps:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/e806df44-f98d-4d44-805b-9d3c1c256a30)
