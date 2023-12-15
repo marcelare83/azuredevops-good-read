@@ -29,7 +29,7 @@ jobs:
 
 This means you can for example have one job that builds the main source code and another job that runs the tests and a third job that does some kind of analysis, and they can all run simultaneously.
 
-You can then have a final step that utilizes the [`dependsOn`](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions?view=azure-devops&tabs=yaml%2Cstages#use-the-output-variable-from-a-job-in-a-condition-in-a-subsequent-job) parameter to make sure a final publish step does not run until all the other jobs have finished successfully.
+You can combine this with something like a a final "publish" step that utilizes the [`dependsOn`](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions?view=azure-devops&tabs=yaml%2Cstages#use-the-output-variable-from-a-job-in-a-condition-in-a-subsequent-job) parameter to make sure it doesn't run until all the other jobs have finished successfully.
 
 The only thing that limits parallelization in this way is more or less if there are dependencies between steps of a specific pipeline that cannot be run in a different job (which runs on a different agent). Keep in mind thought that you can utilize the [PublishPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-pipeline-artifact-v1?view=azure-pipelines) and [DownloadPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/download-pipeline-artifact-v2?view=azure-pipelines) tasks to publish some kind of result from one job and download it in another.
 
