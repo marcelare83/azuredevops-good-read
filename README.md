@@ -80,8 +80,8 @@ Combining both these things could look like this:
 
 This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
 
-### > Limit frequency of SonarQube analysis runs
-Running the SonarQube analysis on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis. Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
+### > Limit frequency of static code analysis runs
+If you are using some kind of tool for static code analysis, such as SonarQube, keep in mind that doing this on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis (at least when it comes to SonarQube). Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
 
 One way to achieve this is to create a script like this:
 
@@ -159,6 +159,20 @@ and will show up like this in the UI when queueing a new pipeline build:
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/92a7569e-bc34-4b2f-bd08-8a19269d7289)
 
 ### > Run as many jobs in parallel as you can
+One good way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job.
+
+For example you can have one job that builds the main source code and another job that runs the tests and a third job that does some kind of analysis.
+
+You can then have a final step that utilizes the [`dependsOn`](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions?view=azure-devops&tabs=yaml%2Cstages#use-the-output-variable-from-a-job-in-a-condition-in-a-subsequent-job) parameter to make sure a final publish step does not run until all the other jobs have finished successfully.
+
+The only thing that limits parallelization in this way is more or less if there are dependencies between steps of a specific pipeline that cannot be run in a different job (which runs on a different agent). Keep in mind thought that you can utilize the [PublishPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-pipeline-artifact-v1?view=azure-pipelines) and [DownloadPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/download-pipeline-artifact-v2?view=azure-pipelines) tasks to publish some kind of result from one job and download it in another.
+
+It is also easier to run more jobs in parallel if your .NET code is using .NET Core and not .NET Framework because it is possible to build individual .NET Core projects in the pipeline without having to build everything in a solution, which is not the case for .NET Framework. This means that if you have let's say `Project1.csproj` and `TestProject1.csproj` that are both part of `MySolution.sln`, you can create two jobs that builds that specific `.csproj` file and not the entire solution, and then run them in parallel.
+
+Keep in mind that as you increase the number of parallel jobs that are being run you might start getting into issues where there are no available agents. In this case you can go to Project Settings > Pipelines > Parallel jobs and increase the number there (if you're willing to pay for it). It costs [$40 per additional Microsoft-hosted agent](https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/).
+
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/6df852e3-f12e-4e79-9072-c2858490edeb)
+
 
 ## Gotchas
 ### > Running "dotnet tool install" on Linux
