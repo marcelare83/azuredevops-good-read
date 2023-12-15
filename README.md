@@ -81,14 +81,22 @@ Bringing both these things together would look like this:
 This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
 
 ## Gotchas
-### `dotnet tool`
-- dotnet tool install gotcha for Linux regarding "workingDirectory"
-- NOTE: We need to set the workingDirectory to an arbitrary folder (e.g. "Scripts")
-- that does not have any .NET projects in it, because the .NET Core CLI will
-- automatically restore any .NET projects in the working directory.
+### > Running "dotnet tool install" on Linux
+If you run the `dotnet tool install` command in a task on an agent running on a Linux-based OS you might run into issues where the task fails to complete with an error message along the lines of the folder containing multiple project files. I think this is related to the fact that .NET Core CLI will automatically restore any .NET projects in the working directory and does not like if there are multiple of them. The process of installing a new dotnet tool does not require this to happen, so it is ostensibly a bug, but I might be missing something.
 
-### "PublishPipelineArtifact" task
-- PublishPipelineArtifact@1 doesn't flatten folders
+One way to get around this issue is to set the ["workingDirectory" parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/powershell-v2?view=azure-pipelines#:~:text=workingDirectory%20%2D-,Working%20Directory,-string.) to an arbitrary folder in the repository that does **not** contain any `.csproj` files at all:
+
+```
+- task: PowerShell@2
+  displayName: "Install the 'dotnet-coverage' tool"
+  inputs:
+    targetType: inline
+    workingDirectory: "$(Build.SourcesDirectory)/ArbitraryFolder" # <----
+    script: dotnet tool install dotnet-coverage --global --ignore-failed-sources
+```
+
+### The "PublishPipelineArtifact" task doesn't flatten folders
+
 - i.e. if you download an artifact "MyCoolArtifact1" &  "MyCoolArtifact2" with some arbitrary files into "MyFolder", then it will result in MyFolder/MyCoolArtifact1/... & MyFolder/MyCoolArtifact1/...
 - We can potentially solve this by using the "CopyFiles@2" task w/ the `flattenFolders` parameter set to true
 
@@ -130,9 +138,6 @@ This will result in you being able to take advantage of the faster publishing sp
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vsbuild-v1?view=azure-pipelines
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines
-
-### Implicit restore & build
-- https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore
 
 ### "pathtoCustomTestAdapters"
 - "pathtoCustomTestAdapters" for VSTest task:
