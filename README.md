@@ -139,15 +139,12 @@ You instead need to write it like this, otherwise the files won't be found:
 
 More information about this bug can be found [in this forum post](https://stackoverflow.com/a/70874760).
 
-### > Installing new software on a self-hosted agent can require a restart of the agent
+### > Installing new software on a self-hosted agent could require a restart before it takes effect
 If you are running your pipeline on a self-hosted agent and have tasks that install new software, for example using `dotnet tool install`, then a restart of the agent could be required for it to recognize this new tool/software.
 
 > I noticed this when I tried installing the `dotnet-coverage` tool and it said it was already installed but at the same time when trying to use it in a task it said it wasn't installed, leading to a catch-22. Restarting the agent solved this issue.
 
 The solution was taken from [this forum post](https://stackoverflow.com/a/62712205).
-
-### Local NuGet feed
-- no-build, no-restore, vsts-feed
 
 ## Code coverage
 - parallell test execution
@@ -173,6 +170,11 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
 ## SonarQube
 
 ## .NET
+### > Issues related to specifying a local NuGet feed in `nuget.config`
+If you have specified a 
+
+- no-build, no-restore, vsts-feed
+
 ### > Visual Studio-based tasks vs. .NET-based tasks
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vsbuild-v1?view=azure-pipelines
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines
