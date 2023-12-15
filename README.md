@@ -4,7 +4,7 @@
 ### > Run on Linux-based agents when possible
 When possible, always run the pipeline on a Linux-based agent instead of a Windows-based one. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
 
-```
+```yaml
 pool:
   vmImage: "ubuntu-latest"
 ```
@@ -16,7 +16,7 @@ Make sure you are not accidentally building a project/solution multiple times - 
 
 A way to get around this is to either (a) skip the first build step and simply run the test task as this will also build and restore the project, or (b) keep the separate build task and then call the test task with the `--no-build` argument:
 
-```
+```yaml
 - task: DotNetCoreCLI@2
   displayName: "🔬 dotnet test"
   inputs:
@@ -38,7 +38,7 @@ The issue is that this task is so incredibly slow that it basically makes it unu
 
 An alternative to this stand-alone task you can use if you are running a .NET test task is to specify that code coverage should be collected and published during the test run, like this:
 
-```
+```yaml
 - task: DotNetCoreCLI@2
   displayName: "🔬 dotnet test"
   inputs:
@@ -57,7 +57,7 @@ An alternative to this is to instead produce the code results with the `.coverag
 
 Combining both these things could look like this:
 
-```
+```yaml
 - task: DotNetCoreCLI@2
   displayName: "🔬 dotnet test"
   inputs:
@@ -86,7 +86,7 @@ If you run the `dotnet tool install` command in a task on an agent running on a 
 
 One way to get around this issue is to set the ["workingDirectory" parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/powershell-v2?view=azure-pipelines#:~:text=workingDirectory%20%2D-,Working%20Directory,-string.) to an arbitrary folder in the repository that does **not** contain any `.csproj` files at all:
 
-```
+```yaml
 - task: PowerShell@2
   displayName: "Install the 'dotnet-coverage' tool"
   inputs:
@@ -100,7 +100,7 @@ If you have a need to publish and download artifacts between different jobs in a
 
 One way solve this is to first download the pipeline artifacts and then use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/copy-files-v2?view=azure-pipelines&tabs=yaml) task w/ the `flattenFolders` parameter set to `true`:
 
-```
+```yaml
 - task: CopyFiles@2
   displayName: "Copy test result files to $(Agent.TempDirectory)/TestResults"
   inputs:
@@ -115,7 +115,7 @@ One way solve this is to first download the pipeline artifacts and then use the 
 ### > "CopyFiles" doesn't work as expected when trying to copy multiple specific file types
 If you want to use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/copy-files-v2?view=azure-pipelines&tabs=yaml) task to copy specific file types (like `.xml`, `.coverage`, `.trx`) instead of all files in a specific folder, you need to make sure that you do not write it over multiple lines using single quotes, like this:
 
-```
+```yaml
 - task: CopyFiles@2
   inputs:
     SourceFolder: "$(Build.SourcesDirectory)"
@@ -127,7 +127,7 @@ If you want to use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/d
 
 You instead need to write it like this, otherwise the files won't be found:
 
-```
+```yaml
 - task: CopyFiles@2
   inputs:
     SourceFolder: "$(Build.SourcesDirectory)"
@@ -186,17 +186,17 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
 
 ## Pipeline templates
 ### Conditions for templates
-```
+```yaml
 ${{ if ne(variables['Build.Reason'], 'PullRequest') }}
 ```
 
 ## Tests run in pipeline that require "Azurite"
-```
-      # Azurite is required for some tests to run as expected
-      # See: https://learn.microsoft.com/en-us/samples/azure-samples/automated-testing-with-azurite/automated-testing-with-azure/
-      - bash: |
-          npm install -g azurite
-          mkdir azurite
-          azurite --silent --location azurite &
-        displayName: "Install and Run Azurite"
+```yaml
+# Azurite is required for some tests to run as expected
+# See: https://learn.microsoft.com/en-us/samples/azure-samples/automated-testing-with-azurite/automated-testing-with-azure/
+- bash: |
+    npm install -g azurite
+    mkdir azurite
+    azurite --silent --location azurite &
+  displayName: "Install and Run Azurite"
 ```
