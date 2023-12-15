@@ -20,6 +20,9 @@
 - Installing new software on an self-hosted agent (like a dotnet tool) during a build could lead to you needing to restart the agent
 - See: https://stackoverflow.com/a/62712205
 
+### Local NuGet feed
+- no-build, no-restore, vsts-feed
+
 ## Performance
 ### General tips & tricks
 - When possible, always run the pipeline on a Linux-based agent instead of Windows. In my experience this can reduce the runtime by up to 50%, depending on the tasks:
@@ -68,11 +71,7 @@ The `--no-build` flag will skip building the test project before running it, it 
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops#which-coverage-tools-and-result-formats-can-be-used-for-validating-code-coverage-in-pull-requests
 
-### 
 ## SonarQube
-
-## Local NuGet feed
-- no-build, no-restore, vsts-feed
 
 ## .NET
 ### Implicit restore & build
