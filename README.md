@@ -218,7 +218,7 @@ If you want to use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/d
     TargetFolder: "$(Build.ArtifactStagingDirectory)"
 ```
 
-You instead need to write it like this, otherwise the files won't be found:
+You instead need to write it like this (without quotes), otherwise the files won't be found:
 
 ```yaml
 - task: CopyFiles@2
@@ -279,13 +279,17 @@ If you have specified a
 - Use the "pathtoCustomTestAdapters" property to point to one of the .NET Framework-projects, like so:
 - pathtoCustomTestAdapters: "Tests/Internal/Viedoc.Worker.Tests/bin/Release/net472/"
 
-## Pipeline templates
-### Conditions for templates
+## General Azure DevOps pipeline tips
+### > Working directory when checking out multiple repositories
+
+### > Conditions for templates
+If you
+
 ```yaml
 ${{ if ne(variables['Build.Reason'], 'PullRequest') }}
 ```
 
-## Tests run in pipeline that require "Azurite"
+## > Tests run in pipeline that require "Azurite"
 ```yaml
 # Azurite is required for some tests to run as expected
 # See: https://learn.microsoft.com/en-us/samples/azure-samples/automated-testing-with-azurite/automated-testing-with-azure/
