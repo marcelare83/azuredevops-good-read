@@ -30,11 +30,11 @@ The `--no-build` flag will skip building the test project before running it, it 
 - See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test
 
 ### Avoid the "PublishCodeCoverageResults" task
-The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in Azure DevOps, like this:
+The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in the pipeline run summary in Azure DevOps:
 
-![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/bfb4f434-24df-4989-8143-bdfa0852d70b)
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/e806df44-f98d-4d44-805b-9d3c1c256a30)
 
-The issue is that this task is so incredibly slow that it basically makes it unusable unless the amount of files is very small. This is a known issue and has been reported but not fixed (yet), see: https://github.com/microsoft/azure-pipelines-tasks/issues/4945.
+The issue is that this task is so incredibly slow that it basically makes it unusable unless the amount of files is very small. This is a known issue and has [been reported years ago](https://github.com/microsoft/azure-pipelines-tasks/issues/4945) but not fixed (yet).
 
 An alternative to this stand-alone task you can use if you are running a .NET test task is to specify that code coverage should be collected and published during the test run, like this:
 
