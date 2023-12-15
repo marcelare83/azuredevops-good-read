@@ -25,7 +25,7 @@
 - When possible, always run the pipeline on a Linux-based agent instead of Windows. In my experience this can reduce the runtime by up to 50%, depending on the tasks:
 ```
 pool:
-  vmImage: ubuntu-latest
+  vmImage: "ubuntu-latest"
 ```
 ("ubuntu-latest" is also the default Agent image in Azure DevOps, so if you don't specify anything this will be selected)
 
