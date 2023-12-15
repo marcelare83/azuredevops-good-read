@@ -1,4 +1,4 @@
-# Lessons learned / Tips & Tricks related to using Azure DevOps pipelines w/ .NET & SonarQube
+# Lessons learned - Azure DevOps pipelines + .NET + SonarQube
 
 ## Gotchas
 ### `dotnet tool`
