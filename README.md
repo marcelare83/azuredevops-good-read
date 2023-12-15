@@ -51,9 +51,34 @@ An alternative to this stand-alone task you can use if you are running a .NET te
 
 Note that the [default value for the "publishTestResults" parameter is `true`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=publishTestResults%20%2D-,Publish%20test%20results%20and%20code%20coverage,-boolean.%20Optional.%20Use) and can therefore be skipped. I've explicitly added it here for the sake of clarity.
 
+Publishing the test results directly form the "DotNetCoreCLI@2" task like this is **much, much faster** and I don't exactly know why. However, the "built-in" code coverage reporting only handles the binary `.coverage` format (which is what is produced if you don't specify another format in the `--collect` argument). Therefore, if you are instead producing code coverage results with some kind of XML-based format ([using "Coverlet" for example](https://github.com/coverlet-coverage/coverlet?tab=readme-ov-file#usage)), then you need to use the stand-alone publish task.
 
+An alternative to this is to instead produce the code results with the `.coverage` format, publish it, and then in a separate task re-format the results to XML. One way to do is to use the [`dotnet-coverage` tool](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage). Specific info about re-formatting using this tool can be found [here](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage#merge-code-coverage-reports).
 
-  - But publishing directly from the "DotNetCoreCLI@2" task is much, much faster (I don't know why this is)
+Bringing both these things together would look like this:
+
+```
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/MyTestProject.csproj"
+    publishTestResults: true
+    arguments: >
+      --collect "Code Coverage"
+
+- task: PowerShell@2
+  displayName: "Install the 'dotnet-coverage' tool"
+  inputs:
+    targetType: inline
+    script: dotnet tool install dotnet-coverage --global --ignore-failed-sources
+
+- script: >
+    dotnet-coverage merge -o $(Agent.TempDirectory)/coverage.xml -f xml $(Agent.TempDirectory)/*/*.coverage
+  displayName: "Re-format code coverage file(s) to XML"
+```
+
+This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
 
 ## Gotchas
 ### `dotnet tool`
