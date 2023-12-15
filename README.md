@@ -112,7 +112,7 @@ One way solve this is to first download the pipeline artifacts and then use the 
 
 `Contents: "**"` copies all files in the specified source folder and all files in all sub-folders. Note that this is the default value, I've explicitly added it here for the sake of clarity.
 
-### > "CopyFiles" doesn't work as expected when tryin go copy specific file types
+### > "CopyFiles" doesn't work as expected when trying to copy multiple specific file types
 If you want to use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/copy-files-v2?view=azure-pipelines&tabs=yaml) task to copy specific file types (like `.xml`, `.coverage`, `.trx`) instead of all files in a specific folder, you need to make sure that you do not write it over multiple lines using single quotes, like this:
 
 ```
@@ -139,9 +139,12 @@ You instead need to write it like this, otherwise the files won't be found:
 
 More information about this bug can be found [in this forum post](https://stackoverflow.com/a/70874760).
 
-### Installing new software on a self-hosted agent
-- Installing new software on an self-hosted agent (like a dotnet tool) during a build could lead to you needing to restart the agent
-- See: https://stackoverflow.com/a/62712205
+### > Installing new software on a self-hosted agent can require a restart of the agent
+If you are running your pipeline on a self-hosted agent and have tasks that install new software, for example using `dotnet tool install`, then a restart of the agent could be required for it to recognize this new tool/software.
+
+> I noticed this when I tried installing the `dotnet-coverage` tool and it said it was already installed but at the same time when trying to use it in a task it said it wasn't installed, leading to a catch-22. Restarting the agent solved this issue.
+
+The solution was taken from [this forum post](https://stackoverflow.com/a/62712205).
 
 ### Local NuGet feed
 - no-build, no-restore, vsts-feed
