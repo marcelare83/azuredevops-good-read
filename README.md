@@ -337,7 +337,7 @@ We also use the `--no-build` argument when running the tests:
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines
 - https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines
 
-### "pathtoCustomTestAdapters"
+### > "pathtoCustomTestAdapters"
 - "pathtoCustomTestAdapters" for VSTest task:
 - Required when building a solution with both .NET Core & .NET Framework-based test projects
 - Use the "pathtoCustomTestAdapters" property to point to one of the .NET Framework-projects, like so:
@@ -353,7 +353,7 @@ If you
 ${{ if ne(variables['Build.Reason'], 'PullRequest') }}
 ```
 
-## > Tests run in pipeline that require "Azurite"
+### > Tests run in pipeline that require "Azurite"
 ```yaml
 # Azurite is required for some tests to run as expected
 # See: https://learn.microsoft.com/en-us/samples/azure-samples/automated-testing-with-azurite/automated-testing-with-azure/
