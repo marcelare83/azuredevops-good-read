@@ -35,7 +35,7 @@ The only thing that limits parallelization in this way is more or less if there 
 
 It is also easier to run more jobs in parallel if your .NET code is using .NET Core and not .NET Framework because it is possible to build individual .NET Core projects in the pipeline without having to build everything in a solution, which is not the case for .NET Framework. This means that if you have let's say `Project1.csproj` and `TestProject1.csproj` that are both part of `MySolution.sln`, you can create two jobs that builds that specific `.csproj` file and not the entire solution, and then run them in parallel.
 
-Keep in mind that as you increase the number of parallel jobs that are being run you might start getting into issues where there are no available agents. In this case you can go to Project Settings > Pipelines > Parallel jobs and increase the number there (if you're willing to pay for it). It costs [$40 per month per additional Microsoft-hosted agent](https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/).
+Keep in mind that as you increase the number of parallel jobs that are being run you might start getting into issues where there are no available agents because all of them are already busy with other jobs. In this case you can go to Project Settings > Pipelines > Parallel jobs and increase the number there (if you're willing to pay for it). This costs [$40 per month per additional Microsoft-hosted agent](https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/).
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/6df852e3-f12e-4e79-9072-c2858490edeb)
 
