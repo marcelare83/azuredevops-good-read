@@ -3,9 +3,9 @@
 ## Gotchas
 ### `dotnet tool`
 - dotnet tool install gotcha for Linux regarding "workingDirectory"
-- # NOTE: We need to set the workingDirectory to an arbitrary folder (e.g. "Scripts")
-- # that does not have any .NET projects in it, because the .NET Core CLI will
-- # automatically restore any .NET projects in the working directory.
+- NOTE: We need to set the workingDirectory to an arbitrary folder (e.g. "Scripts")
+- that does not have any .NET projects in it, because the .NET Core CLI will
+- automatically restore any .NET projects in the working directory.
 
 ### "PublishPipelineArtifact" task
 - PublishPipelineArtifact@1 doesn't flatten folders
