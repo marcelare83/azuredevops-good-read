@@ -751,7 +751,8 @@ One way to do that is to add this task:
     azurite --silent --location azurite &
   displayName: "Install and Run Azurite"
 ```
-  
+</details>
+
 ## ⏩ .NET-related tips
 
 <details>
