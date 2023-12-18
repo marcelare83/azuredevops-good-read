@@ -11,7 +11,7 @@
   </summary>
 
 ## Performance-related tips
-### > Run on Linux-based agents when possible
+### > Run on Linux-based agents
 When possible, always run the pipeline on a Linux-based agent instead of a Windows-based one. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
 
 ```yaml
