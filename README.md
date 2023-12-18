@@ -1,4 +1,4 @@
-# Lessons learned - Azure DevOps pipelines + .NET + SonarQube
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/f914bef3-b28c-4df9-a9cd-1af7014b78fb)# Lessons learned - Azure DevOps pipelines + .NET + SonarQube
 
 ## Performance-related tips
 ### > Run on Linux-based agents when possible
@@ -255,6 +255,11 @@ If you are running your pipeline on a self-hosted agent and have tasks that inst
 > I noticed this when I tried installing the `dotnet-coverage` tool and it said it was already installed but at the same time when trying to use it in a task it said it wasn't installed, leading to a catch-22. Restarting the agent solved this issue.
 
 The solution was taken from [this forum post](https://stackoverflow.com/a/62712205).
+
+### > Default test result folder location for "DotNetCoreCLI@2" vs. "VSTest@2"
+Note that the "DotNetCoreCLI@2" task puts test results in `$(Agent.TempDirectory)` whereas the legacy "VSTest@2" task puts it in `$(Agent.TempDirectory)/TestResults`.
+
+This location can be re-configured for the "VSTest@2" using the [`resultsFolder` parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=resultsFolder%20%2D-,Test%20results%20folder,-string.%20Default%20value).
 
 ## Code coverage
 ### > Gathering code coverage from parallel jobs
