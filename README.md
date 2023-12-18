@@ -317,7 +317,7 @@ To enable this you need to:
 \* **Note that only the binary `.coverage` format is [currently supported](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops#which-coverage-tools-and-result-formats-can-be-used-for-validating-code-coverage-in-pull-requests), so you need to make sure you are publishing this format** 
 
 ## SonarQube
-### > Running the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
+### > Unable to run the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
 There are two main SonarQube-related tasks available in Azure DevOps:
 - [SonarQubePrepare@5](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sonar-qube-prepare-v5?view=azure-pipelines)
 - [SonarQubeAnalyze@5](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sonar-qube-analyze-v5?view=azure-pipelines)
@@ -521,7 +521,40 @@ This seems to be because the task gets "confused" about what test adapter to use
 
 ## General Azure DevOps pipeline tips
 ### > Azure DevOps pipeline templates
-...
+You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
+
+The way this works is that you can first define some kind of YAML code in one repository, say `TemplateRepository` in the `Infrastructure` project in Azure DevOps:
+
+TemplateRepository/templates/mytemplate.yml:
+```yaml
+parameters:
+  - name: message
+    type: string
+
+steps:
+  - bash: echo ${{ parameters.message }}
+```
+
+You can then use that template like this (you specify the template repository as a resource and then you point to the file you want to use):
+
+```yaml
+resources:
+  repositories:
+    - repository: infrastructure # variable name
+      type: git
+      name: Infrastructure/TemplateRepository # Project/Repo
+      ref: refs/heads/main # branch
+
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - template: templates/mytemplate.yml@infrastructure
+    parameters:
+      message: "My cool message"
+```
 
 ### > Conditions for pipeline templates
 If you
