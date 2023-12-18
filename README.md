@@ -209,8 +209,56 @@ This will result in you being able to take advantage of the faster publishing sp
   
 ## Code coverage-related tips
 ### > Gathering code coverage from parallel jobs
-...
+Even though it requires some extra work, it _is_ possible to collect code coverage from multiple parallel jobs, which allows you to significantly improve performance for large solutions with long build times and many tests (see [performance-related tips](#performance-related-tips)).
 
+1. Run all tests in multiple jobs, in each job you need to checkout the code, build the relevant code and then run the tests, make sure you specify that code coverage should be collected. You then need to publish the test results (`.coverage` and `.trx` files) so we can download them in the job that is going to run the actual SonarQube analysis:
+
+```yaml
+  ############################
+  #### RUN TESTS
+  ############################
+
+  # The `--no-build` flag will skip building the test project before running it (since we already built in the previous step)
+  # It also implicitly sets the --no-restore flag
+  # https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test
+  - task: DotNetCoreCLI@2
+    displayName: "🔬 dotnet test"
+    inputs:
+      command: "test"
+      projects: "${{ parameters.testsToRun }}"
+      testRunTitle: "${{ parameters.testSuite }}"
+      publishTestResults: true
+      arguments: >
+        --configuration Release
+        --collect "Code Coverage"
+        --no-build
+
+  ############################
+  #### PUBLISH ARTIFACT
+  ############################
+
+  # Copy relevant files to a "TestResults" folder
+  # so we can publish them as an artifact without including the entire TempDirectory
+  # NOTE: We only look for .coverage files one sub-directory down, because there exists
+  # duplicates of these files further down, which we do not want to copy.
+  - task: CopyFiles@2
+    displayName: "Copy test result files to $(Agent.TempDirectory)/TestResults"
+    inputs:
+      SourceFolder: "$(Agent.TempDirectory)"
+      Contents: |
+        **/*.trx
+        */*.coverage
+      TargetFolder: "$(Agent.TempDirectory)/TestResults"
+      flattenFolders: true
+
+  - task: PublishPipelineArtifact@1
+    displayName: "Publish pipeline artifact: ${{ parameters.jobName }}"
+    inputs:
+      targetPath: "$(Agent.TempDirectory)/TestResults"
+      artifactName: ${{ parameters.jobName }}
+```
+
+2. You will also need to have one job that prepares the analysis, builds the source code and runs the analysis. It is _not_ possible to split the actual analysis and the preparation/building (more info [here](
 ### > How to enable collecting of code coverage during test execution
 - DotNetCoreCLI@2
 
