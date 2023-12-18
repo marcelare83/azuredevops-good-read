@@ -1,6 +1,6 @@
 # Lessons learned - Azure Pipelines, Code Coverage, .NET, SonarQube
 
-## ⏩ Performance-related tips
+## 📖 Performance-related tips
 
 <details>
   <summary>
@@ -221,7 +221,7 @@ This will result in you being able to take advantage of the faster publishing sp
 
 </details>
   
-## ⏩ Code coverage-related tips
+## 📖 Code coverage-related tips
 
 <details>
   <summary>
@@ -439,7 +439,7 @@ To enable this you need to:
 
 </details>
   
-## ⏩ Various "gotchas" to watch out for
+## 📖 Various "gotchas" to watch out for
 
 <details>
   <summary>
@@ -541,7 +541,7 @@ This location can be re-configured for the "VSTest@2" using the [`resultsFolder`
 
 </details>
 
-## ⏩ SonarQube-related tips
+## 📖 SonarQube-related tips
 
 <details>
   <summary>
@@ -656,7 +656,7 @@ Specifying test result paths:
 
 </details>
 
-## ⏩ Azure Pipeline-related tips
+## 📖 Azure Pipeline-related tips
 
 <details>
   <summary>
@@ -777,7 +777,7 @@ One way to do that is to add this task:
 ```
 </details>
 
-## ⏩ .NET-related tips
+## 📖 .NET-related tips
 
 <details>
   <summary>
