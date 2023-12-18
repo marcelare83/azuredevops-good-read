@@ -583,11 +583,21 @@ steps:
 ```
 
 ### > Conditions for pipeline templates
-If you
+There is no support for the [`condition` keyword](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions) when using templates, meaning you cannot write something like this:
 
 ```yaml
-${{ if ne(variables['Build.Reason'], 'PullRequest') }}
+  - template: templates/mytemplate.yml@infrastructure
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
 ```
+
+What you CAN do though is define the condition like this:
+
+```yaml
+  - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+      - template: templates/jobs/publish-viedoc-package.yml
+```
+
+and that will work.
 
 ### > Working directory when checking out multiple repositories
 ...
