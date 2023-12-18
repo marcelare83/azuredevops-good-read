@@ -7,15 +7,17 @@
   - [> Avoid unnecessary .NET project building due to implicit restore & build](#-avoid-unnecessary-net-project-building-due-to-implicit-restore--build)
   - [> Avoid the "PublishCodeCoverageResults@1" task due to poor performance](#-avoid-the-publishcodecoverageresults1-task-due-to-poor-performance)
 - [Code coverage-related tips](#code-coverage-related-tips)
-  - [> How to produce code coverage results from parallel jobs]
+  - [> How to produce code coverage results from parallel jobs](#-how-to-produce-code-coverage-results-from-parallel-jobs)
+  - 
 
 ---
+## Performance-related tips
+
 <details>
   <summary>
     Performance-related tips
   </summary>
 
-## Performance-related tips
 ### > Run on Linux-based agents
 When possible, always run the pipeline on a Linux-based agent instead of a Windows-based one. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
 
@@ -204,13 +206,6 @@ Combining both these things could look like this:
 ```
 
 This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
-
-</details>
-
-<details>
-  <summary>
-    Code coverage-related tips
-  </summary>
   
 ## Code coverage-related tips
 ### > How to produce code coverage results from parallel jobs
@@ -410,13 +405,6 @@ To enable this you need to:
     ```
     
 \* **Note that only the binary `.coverage` format is [currently supported](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops#which-coverage-tools-and-result-formats-can-be-used-for-validating-code-coverage-in-pull-requests), so you need to make sure you are publishing this format** 
-
-</details>
-
-<details>
-  <summary>
-    Various "gotchas" to watch out for
-  </summary>
   
 ## Various "gotchas" to watch out for
 ### > Running "dotnet tool install" on Linux
@@ -488,13 +476,6 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
 Note that the "DotNetCoreCLI@2" task puts test results in `$(Agent.TempDirectory)` whereas the legacy "VSTest@2" task puts it in `$(Agent.TempDirectory)/TestResults`.
 
 This location can be re-configured for the "VSTest@2" using the [`resultsFolder` parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=resultsFolder%20%2D-,Test%20results%20folder,-string.%20Default%20value).
-
-</details>
-
-<details>
-  <summary>
-    SonarQube-related tips
-  </summary>
   
 ## SonarQube-related tips
 ### > Unable to run the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
@@ -585,13 +566,6 @@ Specifying test result paths:
       sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/TestResults/.coverage.xml # <---- 
       sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/TestResults/*/*.trx # <---- 
 ``` 
-
-</details>
-
-<details>
-  <summary>
-    Azure Pipeline-related tips
-  </summary>
   
 ## Azure Pipeline-related tips
 ### > Azure DevOps pipeline templates
@@ -689,12 +663,6 @@ One way to do that is to add this task:
     azurite --silent --location azurite &
   displayName: "Install and Run Azurite"
 ```
-</details>
-
-<details>
-  <summary>
-    .NET-related tips
-  </summary>
   
 ## .NET-related tips
 ### > Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task
@@ -808,5 +776,3 @@ This seems to be because the task gets "confused" about what test adapter to use
     configuration: "Release"
     pathtoCustomTestAdapters: "Tests/MyTestProject/bin/Release/net472/ # <----
 ```
-
-</details>
