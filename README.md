@@ -1,4 +1,4 @@
-# Lessons learned - Azure DevOps pipelines + .NET + SonarQube
+# Lessons learned - Azure Pipelines, Code Coverage, .NET, SonarQube
 
 - [Performance-related tips](#performance-related-tips)
   - [> Run on Linux-based agents when possible](#-run-on-linux-based-agents-when-possible)
