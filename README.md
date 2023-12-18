@@ -228,7 +228,7 @@ This will result in you being able to take advantage of the faster publishing sp
     <h4> How to enable collecting of code coverage during test execution </h4>
   </summary>
 
-- DotNetCoreCLI@2
+- `DotNetCoreCLI@2`:
 
 ```yaml
 - task: DotNetCoreCLI@2
@@ -242,7 +242,7 @@ This will result in you being able to take advantage of the faster publishing sp
 
 Note that you can specify the argument like this `--collect "Code Coverage;Format=Xml"` to collect the coverage information in an XML format instead of the binary `.coverage` format.
 
-- VSTest@2
+- `VSTest@2`:
 
 ```yaml
 - task: VSTest@2
