@@ -1,5 +1,10 @@
 # Lessons learned - Azure DevOps pipelines + .NET + SonarQube
 
+- [Performance-related tips](#performance-related-tips)
+  - [> Run on Linux-based agents when possible](#-run-on-linux-based-agents-when-possible)
+  - [> Run as many jobs in parallel as you can](#-run-as-many-jobs-in-parallel-as-you-can)
+    > 
+
 ## Performance-related tips
 ### > Run on Linux-based agents when possible
 When possible, always run the pipeline on a Linux-based agent instead of a Windows-based one. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
