@@ -2,8 +2,9 @@
 
 - [Performance-related tips](#performance-related-tips)
   - [> Run on Linux-based agents when possible](#-run-on-linux-based-agents-when-possible)
-  - [> Run multiple jobs in parallel when possible](#-run-as-many-jobs-in-parallel-as-you-can)
+  - [> Run multiple jobs in parallel when possible](#-run-multiple-jobs-in-parallel-when-possible)
 
+---
 <details>
   <summary>
     Performance-related tips
@@ -202,6 +203,9 @@ This will result in you being able to take advantage of the faster publishing sp
 </details>
 
 <details>
+  <summary>
+    Code coverage-related tips
+  </summary>
   
 ## Code coverage-related tips
 ### > Gathering code coverage from parallel jobs
@@ -261,6 +265,9 @@ To enable this you need to:
 </details>
 
 <details>
+  <summary>
+    Various "gotchas" to watch out for
+  </summary>
   
 ## Various "gotchas" to watch out for
 ### > Running "dotnet tool install" on Linux
@@ -336,6 +343,9 @@ This location can be re-configured for the "VSTest@2" using the [`resultsFolder`
 </details>
 
 <details>
+  <summary>
+    SonarQube-related tips
+  </summary>
   
 ## SonarQube-related tips
 ### > Unable to run the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
@@ -430,8 +440,11 @@ Specifying test result paths:
 </details>
 
 <details>
+  <summary>
+    Azure Pipeline-related tips
+  </summary>
   
-## Azure DevOps pipeline-related tips
+## Azure Pipeline-related tips
 ### > Azure DevOps pipeline templates
 You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
 
@@ -530,6 +543,9 @@ One way to do that is to add this task:
 </details>
 
 <details>
+  <summary>
+    .NET-related tips
+  </summary>
   
 ## .NET-related tips
 ### > Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task
