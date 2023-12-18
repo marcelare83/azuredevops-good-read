@@ -15,10 +15,9 @@
 
 <details>
   <summary>
-    Performance-related tips
+    <h3> Run on Linux-based agents </h3>
   </summary>
 
-### > Run on Linux-based agents
 When possible, always run the pipeline on a Linux-based agent instead of a Windows-based one. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
 
 ```yaml
@@ -60,7 +59,13 @@ Keep in mind that as you increase the number of parallel jobs that are being run
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/6df852e3-f12e-4e79-9072-c2858490edeb)
 
-### > Limit frequency of static code analysis runs
+</details>
+
+<details>
+  <summary>
+    <h3> Limit frequency of static code analysis runs </h3>
+  </summary>
+
 If you are using some kind of tool for static code analysis, such as [SonarQube](https://www.sonarsource.com/products/sonarqube/), keep in mind that doing this on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis (at least when it comes to SonarQube). Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
 
 One way to achieve this is to create a script like this (this is a PowerShell example):
@@ -155,6 +160,8 @@ A way to get around this is to either (a) skip the first build step and simply r
 
 The `--no-build` flag will skip building the test project before running it, it also implicitly sets the --no-restore flag. 
 - See https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-test
+
+</details>
 
 ### > Avoid the "PublishCodeCoverageResults@1" task due to poor performance
 The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in the pipeline run summary in Azure DevOps:
