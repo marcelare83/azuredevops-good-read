@@ -273,6 +273,8 @@ This location can be re-configured for the "VSTest@2" using the [`resultsFolder`
 
 </details>
 
+<details>
+  
 ## Code coverage
 ### > Gathering code coverage from parallel jobs
 ...
@@ -328,6 +330,10 @@ To enable this you need to:
     
 \* **Note that only the binary `.coverage` format is [currently supported](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops#which-coverage-tools-and-result-formats-can-be-used-for-validating-code-coverage-in-pull-requests), so you need to make sure you are publishing this format** 
 
+</details>
+
+<details>
+  
 ## SonarQube
 ### > Unable to run the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
 There are two main SonarQube-related tasks available in Azure DevOps:
@@ -418,6 +424,10 @@ Specifying test result paths:
       sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/TestResults/*/*.trx # <---- 
 ``` 
 
+</details>
+
+<details>
+  
 ## .NET
 ### > Setting "testRunTitle" when running test task
 You can customize the value of the `testRunTitle` parameter for both the [DotNetCoreCLI@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.%20Optional.%20Use) task and the [VSTest@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.) task.
@@ -531,6 +541,10 @@ This seems to be because the task gets "confused" about what test adapter to use
     pathtoCustomTestAdapters: "Tests/MyTestProject/bin/Release/net472/ # <----
 ```
 
+</details>
+
+<details>
+  
 ## General Azure DevOps pipeline tips
 ### > Azure DevOps pipeline templates
 You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
@@ -592,3 +606,4 @@ One way to do that is to add this task:
     azurite --silent --location azurite &
   displayName: "Install and Run Azurite"
 ```
+</details>
