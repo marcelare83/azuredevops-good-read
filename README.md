@@ -275,7 +275,7 @@ This location can be re-configured for the "VSTest@2" using the [`resultsFolder`
 
 <details>
   
-## Code coverage
+## Code coverage-related tips
 ### > Gathering code coverage from parallel jobs
 ...
 
@@ -334,7 +334,7 @@ To enable this you need to:
 
 <details>
   
-## SonarQube
+## SonarQube-related tips
 ### > Unable to run the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
 There are two main SonarQube-related tasks available in Azure DevOps:
 - [SonarQubePrepare@5](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sonar-qube-prepare-v5?view=azure-pipelines)
@@ -428,8 +428,8 @@ Specifying test result paths:
 
 <details>
   
-## .NET
-### > Setting "testRunTitle" when running test task
+## .NET-related tips
+### > Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task
 You can customize the value of the `testRunTitle` parameter for both the [DotNetCoreCLI@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.%20Optional.%20Use) task and the [VSTest@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.) task.
 
 For example:
@@ -545,7 +545,7 @@ This seems to be because the task gets "confused" about what test adapter to use
 
 <details>
   
-## General Azure DevOps pipeline tips
+## Azure DevOps pipeline-related tips
 ### > Azure DevOps pipeline templates
 You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
 
