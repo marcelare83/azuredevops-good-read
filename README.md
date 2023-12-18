@@ -260,7 +260,7 @@ Note that you can specify the argument like this `--collect "Code Coverage;Forma
 
 <details>
   <summary>
-    <h4> How to produce code coverage results from parallel jobs </h4>
+    <h4> How to produce code coverage results when running parallel test jobs </h4>
   </summary>
 
 Even though it requires some extra work, it _is_ possible to collect code coverage from multiple parallel jobs, which allows you to significantly improve performance for large solutions with long build times and many tests (see [performance-related tips](#performance-related-tips)).
@@ -405,9 +405,13 @@ $onPremWindowsFilePattern = 'C:\\agent\\_work\\\d+\\s'
   displayName: "SonarQube: Run analysis"
 ```
 
-- We should then get both code coverage information and test results into SonarQube:
+We should then get both code coverage information and test results into SonarQube:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/70972161-7cc6-4a6a-891f-c1f168df0565)
+
+More info:
+- [Similar handling of code coverage paths in SonarQube's own GitHub pipeline](https://github.com/SonarSource/sonar-dotnet/blob/master/azure-pipelines.yml#L381)
+- https://community.sonarsource.com/t/run-sonarcloud-analysis-in-multi-job-azure-devops-pipeline/92546/3
 
 </details>
 
