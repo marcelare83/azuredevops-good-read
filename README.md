@@ -273,6 +273,8 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
       --collect "Code Coverage" # <----
 ```
 
+Note that you can specify the argument like this `--collect "Code Coverage;Format=Xml"` to collect the coverage information in an XML format instead of the binary `.coverage` format.
+
 - VSTest@2
 
 ```yaml
