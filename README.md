@@ -1,10 +1,10 @@
 # Lessons learned - Azure Pipelines, Code Coverage, .NET, SonarQube
 
-## Performance-related tips
+## ⏩ Performance-related tips
 
 <details>
   <summary>
-    <h3> Always run the pipeline on a Linux-based agent </h3>
+    <h4> Always run the pipeline on a Linux-based agent </h4>
   </summary>
 
 When possible, always run the pipeline on a Linux-based agent instead of a Windows-based one. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
@@ -52,7 +52,7 @@ Keep in mind that as you increase the number of parallel jobs that are being run
 
 <details>
   <summary>
-    <h3> Limit frequency of static code analysis runs </h3>
+    <h4> Limit frequency of static code analysis runs </h4>
   </summary>
 
 If you are using some kind of tool for static code analysis, such as [SonarQube](https://www.sonarsource.com/products/sonarqube/), keep in mind that doing this on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis (at least when it comes to SonarQube). Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
@@ -154,7 +154,7 @@ The `--no-build` flag will skip building the test project before running it, it 
 
 <details>
   <summary>
-    <h3> Avoid the "PublishCodeCoverageResults@1" task due to poor performance </h3>
+    <h4> Avoid the "PublishCodeCoverageResults@1" task due to poor performance </h4>
   </summary>
 
 The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in the pipeline run summary in Azure DevOps:
@@ -209,11 +209,11 @@ This will result in you being able to take advantage of the faster publishing sp
 
 </details>
   
-## Code coverage-related tips
+## ⏩ Code coverage-related tips
 
 <details>
   <summary>
-    <h3> How to enable collecting of code coverage during test execution </h3>
+    <h4> How to enable collecting of code coverage during test execution </h4>
   </summary>
 
 - DotNetCoreCLI@2
@@ -248,7 +248,7 @@ Note that you can specify the argument like this `--collect "Code Coverage;Forma
 
 <details>
   <summary>
-    <h3> How to produce code coverage results from parallel jobs </h3>
+    <h4> How to produce code coverage results from parallel jobs </h4>
   </summary>
 
 Even though it requires some extra work, it _is_ possible to collect code coverage from multiple parallel jobs, which allows you to significantly improve performance for large solutions with long build times and many tests (see [performance-related tips](#performance-related-tips)).
@@ -401,7 +401,7 @@ $onPremWindowsFilePattern = 'C:\\agent\\_work\\\d+\\s'
 
 <details>
   <summary>
-    <h3> Code coverage results in PRs in Azure DevOps </h3>
+    <h4> Code coverage results in PRs in Azure DevOps </h4>
   </summary>
   
 [There is support](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops) for showing code coverage information for Pull Requests in Azure DevOps, if you have it enabled it shows up like this:
@@ -427,11 +427,11 @@ To enable this you need to:
 
 </details>
   
-## Various "gotchas" to watch out for
+## ⏩ Various "gotchas" to watch out for
 
 <details>
   <summary>
-    <h3> Running "dotnet tool install" on Linux </h3>
+    <h4> Running "dotnet tool install" on Linux </h4>
   </summary>
   
 If you run the `dotnet tool install` command in a task on an agent running on a Linux-based OS w/ a project that has multiple project files you might run into issues where the task fails to complete with an error message along the lines of the folder containing multiple project files. I think this is related to the fact that .NET Core CLI will automatically restore any .NET projects in the working directory and does not like if there are multiple of them. The process of installing a new dotnet tool does not require this to happen, so it is ostensibly a bug, but I might be missing something.
@@ -451,7 +451,7 @@ One way to get around this issue is to set the ["workingDirectory" parameter](ht
 
 <details>
   <summary>
-    <h3> The "PublishPipelineArtifact" task doesn't flatten folders </h3>
+    <h4> The "PublishPipelineArtifact" task doesn't flatten folders </h4>
   </summary>
 
 If you have a need to publish and download artifacts between different jobs in a pipeline you can use the [PublishPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-pipeline-artifact-v1?view=azure-pipelines) and [DownloadPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/download-pipeline-artifact-v2?view=azure-pipelines) tasks in Azure DevOps. One thing to keep in mind when doing this is that the "PublishPipelineArtifact" task doesn't flatten folders, i.e. if you download an artifact "MyCoolArtifact1" & "MyCoolArtifact2" with some arbitrary files into "MyFolder", then it will result in the files being put into `MyFolder/MyCoolArtifact1` and `MyFolder/MyCoolArtifact2` instead of directly into `MyFolder/...`.
@@ -501,7 +501,7 @@ More information about this bug can be found [in this forum post](https://stacko
 
 <details>
   <summary>
-    <h3> Installing new software on a self-hosted agent could require a restart before it takes effect </h3>
+    <h4> Installing new software on a self-hosted agent could require a restart before it takes effect </h4>
   </summary>
   
 If you are running your pipeline on a self-hosted agent and have tasks that install new software, for example using `dotnet tool install`, then a restart of the agent could be required for it to recognize this new tool/software.
@@ -514,9 +514,16 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
 Note that the "DotNetCoreCLI@2" task puts test results in `$(Agent.TempDirectory)` whereas the legacy "VSTest@2" task puts it in `$(Agent.TempDirectory)/TestResults`.
 
 This location can be re-configured for the "VSTest@2" using the [`resultsFolder` parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=resultsFolder%20%2D-,Test%20results%20folder,-string.%20Default%20value).
-  
-## SonarQube-related tips
-### > Unable to run the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
+
+</details>
+
+## ⏩ SonarQube-related tips
+
+<details>
+  <summary>
+    <h4> Unable to run the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs </h4>
+  </summary>
+
 There are two main SonarQube-related tasks available in Azure DevOps:
 - [SonarQubePrepare@5](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sonar-qube-prepare-v5?view=azure-pipelines)
 - [SonarQubeAnalyze@5](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sonar-qube-analyze-v5?view=azure-pipelines)
@@ -531,7 +538,7 @@ _Either way, it is annoying..._
 
 <details>
   <summary>
-    <h3> Getting unit test results into SonarQube </h3>
+    <h4> Getting unit test results into SonarQube </h4>
   </summary>
 
 This is configured through the ["Test execution parameters"](https://docs.sonarsource.com/sonarqube/9.9/analyzing-sources-code/test-coverage/test-execution-parameters/) in SonarQube and specified in the "SonarQubePrepare@5" task.
@@ -560,7 +567,7 @@ This test result report is what makes this information show up in SonarQube:
 
 <details>
   <summary>
-    <h3> Be mindful of supported code coverage formats in SonarQube </h3>
+    <h4> Be mindful of supported code coverage formats in SonarQube </h4>
   </summary>
   
 Keep in mind that SonarQube only supports [certain code coverage formats for certain languages](https://docs.sonarsource.com/sonarqube/9.9/analyzing-source-code/test-coverage/test-coverage-parameters/).
@@ -573,7 +580,7 @@ Also, the binary `.coverage` format that is generated by default when collecting
 
 <details>
   <summary>
-    <h3> SonarQube + .NET + Windows-based agent = Magic? </h3>
+    <h4> SonarQube + .NET + Windows-based agent = Magic? </h4>
   </summary>
 
 If you are analyzing .NET code using SonarQube and are using a Windows-based agent, then there seems to be some convention-based magic happening behind the scenes that is good to know about.
@@ -625,11 +632,11 @@ Specifying test result paths:
 
 </details>
 
-## Azure Pipeline-related tips
+## ⏩ Azure Pipeline-related tips
 
 <details>
   <summary>
-    <h3> Azure DevOps pipeline templates </h3>
+    <h4> Azure DevOps pipeline templates </h4>
   </summary>
 
 You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
@@ -671,7 +678,7 @@ steps:
 
 <details>
   <summary>
-    <h3> Conditions for pipeline templates </h3>
+    <h4> Conditions for pipeline templates </h4>
   </summary>
 
 There is no support for the [`condition` keyword](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions) when using templates, meaning you cannot write something like this:
@@ -694,7 +701,7 @@ and that will work.
 
 <details>
   <summary>
-    <h3> Working directory when checking out multiple repositories </h3>
+    <h4> Working directory when checking out multiple repositories </h4>
   </summary>
   
 If you are using pipeline templates and want to for example use script files from the repository that the template YAML file is checked into, you can accomplish this by [checking out multiple repositories](https://learn.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout?view=azure-devops) in the pipeline. So you are both checking out the repository that is using the template repository as a resource and the template repository itself:
@@ -728,7 +735,7 @@ But if you are checking out more than one repo then the working directory will b
 
 <details>
   <summary>
-    <h3> Running tests in pipeline that require "Azurite" </h3>
+    <h4> Running tests in pipeline that require "Azurite" </h4>
   </summary>
 
 If you are running tests that require a local "Azurite" instance, for example for emulating Azure Storage, then you need a way to duplicate this functionality when running these tests in your CI pipeline.
@@ -745,11 +752,11 @@ One way to do that is to add this task:
   displayName: "Install and Run Azurite"
 ```
   
-## .NET-related tips
+## ⏩ .NET-related tips
 
 <details>
   <summary>
-    <h3> Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task </h3>
+    <h4> Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task </h4>
   </summary>
 
 You can customize the value of the `testRunTitle` parameter for both the [DotNetCoreCLI@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.%20Optional.%20Use) task and the [VSTest@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.) task.
@@ -774,7 +781,7 @@ This will make the results that show up in the test results tab in Azure DevOps 
 
 <details>
   <summary>
-    <h3> Issues related to specifying a local NuGet feed in `nuget.config` </h3>
+    <h4> Issues related to specifying a local NuGet feed in `nuget.config` </h4>
   </summary>
   
 If you have specified a local NuGet feed in a `nuget.config` file in the root of your repository, like this:
@@ -856,7 +863,7 @@ We also use the `--no-build` argument when running the tests:
 
 <details>
   <summary>
-    <h3> Running tests after building a solution with both .NET Core & .NET Framework-based test projects </h3>
+    <h4> Running tests after building a solution with both .NET Core & .NET Framework-based test projects </h4>
   </summary>
 
 If you are running a pipeline that is building a solution with a mix of .NET Core & .NET Framework projects then you can run into issues if you run the [`VSTest` task](https://learn.microsoft.com/sv-se/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines) after that. 
