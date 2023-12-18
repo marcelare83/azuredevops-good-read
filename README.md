@@ -428,6 +428,106 @@ Specifying test result paths:
 
 <details>
   
+## Azure DevOps pipeline-related tips
+### > Azure DevOps pipeline templates
+You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
+
+The way this works is that you can first define some kind of YAML code in one repository, say `TemplateRepository` in the `Infrastructure` project in Azure DevOps:
+
+TemplateRepository/templates/mytemplate.yml:
+```yaml
+parameters:
+  - name: message
+    type: string
+
+steps:
+  - bash: echo ${{ parameters.message }}
+```
+
+You can then use that template like this (you specify the template repository as a resource and then you point to the file you want to use):
+
+```yaml
+resources:
+  repositories:
+    - repository: infrastructure # variable name
+      type: git
+      name: Infrastructure/TemplateRepository # Project/Repo
+      ref: refs/heads/main # branch
+
+trigger: none
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+  - template: templates/mytemplate.yml@infrastructure
+    parameters:
+      message: "My cool message"
+```
+
+### > Conditions for pipeline templates
+There is no support for the [`condition` keyword](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions) when using templates, meaning you cannot write something like this:
+
+```yaml
+  - template: templates/mytemplate.yml@infrastructure
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+```
+
+What you CAN do though is define the condition like this:
+
+```yaml
+  - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
+      - template: templates/jobs/publish-viedoc-package.yml
+```
+
+and that will work.
+
+### > Working directory when checking out multiple repositories
+If you are using pipeline templates and want to for example use script files from the repository that the template YAML file is checked into, you can accomplish this by [checking out multiple repositories](https://learn.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout?view=azure-devops) in the pipeline. So you are both checking out the repository that is using the template repository as a resource and the template repository itself:
+
+TemplateRepository/templates/mytemplate.yml:
+
+```yaml
+steps:
+  # checkout: self is implicitly defined for all pipelines, I've adde it here for clarity
+  - checkout: self
+
+  # checkout the infrastructure repo so we can run script files from it
+  - checkout: infrastructure
+```
+
+One important thing to keep in mind when doing this is that it will change the way the default working directory works. Normally when you checkout a repository the root of that repository will be the working directory, so if you have a repostitory `MyRepo` which has a folder `MyFolder` with a textfile `Test.txt`, then in that pipeline you can use the path `MyFolder/Test.txt` to find that file. 
+
+But if you are checking out more than one repo then the working directory will be one folder "up", with the root folder of all repositories being inside that folder. For example, you checkout `MyRepo` and `MyRepo2`. The path to the `Test.txt` in `MyRepo` will now be `MyRepo/MyFolder/Test.txt` instead of just `MyFolder/Test.txt` like it was before:
+
+```
+- MyRepo
+  - MyFolder
+    - Test.txt
+
+- MyRepo2
+  - MyFolder2
+    - Test2.txt
+```
+
+### > Running tests in pipeline that require "Azurite"
+If you are running tests that require a local "Azurite" instance, for example for emulating Azure Storage, then you need a way to duplicate this functionality when running these tests in your CI pipeline.
+
+One way to do that is to add this task:
+
+```yaml
+# Azurite is required for some tests to run as expected
+# See: https://learn.microsoft.com/en-us/samples/azure-samples/automated-testing-with-azurite/automated-testing-with-azure/
+- bash: |
+    npm install -g azurite
+    mkdir azurite
+    azurite --silent --location azurite &
+  displayName: "Install and Run Azurite"
+```
+</details>
+
+<details>
+  
 ## .NET-related tips
 ### > Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task
 You can customize the value of the `testRunTitle` parameter for both the [DotNetCoreCLI@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.%20Optional.%20Use) task and the [VSTest@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.) task.
@@ -541,104 +641,4 @@ This seems to be because the task gets "confused" about what test adapter to use
     pathtoCustomTestAdapters: "Tests/MyTestProject/bin/Release/net472/ # <----
 ```
 
-</details>
-
-<details>
-  
-## Azure DevOps pipeline-related tips
-### > Azure DevOps pipeline templates
-You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
-
-The way this works is that you can first define some kind of YAML code in one repository, say `TemplateRepository` in the `Infrastructure` project in Azure DevOps:
-
-TemplateRepository/templates/mytemplate.yml:
-```yaml
-parameters:
-  - name: message
-    type: string
-
-steps:
-  - bash: echo ${{ parameters.message }}
-```
-
-You can then use that template like this (you specify the template repository as a resource and then you point to the file you want to use):
-
-```yaml
-resources:
-  repositories:
-    - repository: infrastructure # variable name
-      type: git
-      name: Infrastructure/TemplateRepository # Project/Repo
-      ref: refs/heads/main # branch
-
-trigger: none
-
-pool:
-  vmImage: ubuntu-latest
-
-steps:
-  - template: templates/mytemplate.yml@infrastructure
-    parameters:
-      message: "My cool message"
-```
-
-### > Conditions for pipeline templates
-There is no support for the [`condition` keyword](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions) when using templates, meaning you cannot write something like this:
-
-```yaml
-  - template: templates/mytemplate.yml@infrastructure
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-```
-
-What you CAN do though is define the condition like this:
-
-```yaml
-  - ${{ if ne(variables['Build.Reason'], 'PullRequest') }}:
-      - template: templates/jobs/publish-viedoc-package.yml
-```
-
-and that will work.
-
-### > Working directory when checking out multiple repositories
-If you are using pipeline templates and want to for example use script files from the repository that the template YAML file is checked into, you can accomplish this by [checking out multiple repositories](https://learn.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout?view=azure-devops) in the pipeline. So you are both checking out the repository that is using the template repository as a resource and the template repository itself:
-
-TemplateRepository/templates/mytemplate.yml:
-
-```yaml
-steps:
-  # checkout: self is implicitly defined for all pipelines, I've adde it here for clarity
-  - checkout: self
-
-  # checkout the infrastructure repo so we can run script files from it
-  - checkout: infrastructure
-```
-
-One important thing to keep in mind when doing this is that it will change the way the default working directory works. Normally when you checkout a repository the root of that repository will be the working directory, so if you have a repostitory `MyRepo` which has a folder `MyFolder` with a textfile `Test.txt`, then in that pipeline you can use the path `MyFolder/Test.txt` to find that file. 
-
-But if you are checking out more than one repo then the working directory will be one folder "up", with the root folder of all repositories being inside that folder. For example, you checkout `MyRepo` and `MyRepo2`. The path to the `Test.txt` in `MyRepo` will now be `MyRepo/MyFolder/Test.txt` instead of just `MyFolder/Test.txt` like it was before:
-
-```
-- MyRepo
-  - MyFolder
-    - Test.txt
-
-- MyRepo2
-  - MyFolder2
-    - Test2.txt
-```
-
-### > Running tests in pipeline that require "Azurite"
-If you are running tests that require a local "Azurite" instance, for example for emulating Azure Storage, then you need a way to duplicate this functionality when running these tests in your CI pipeline.
-
-One way to do that is to add this task:
-
-```yaml
-# Azurite is required for some tests to run as expected
-# See: https://learn.microsoft.com/en-us/samples/azure-samples/automated-testing-with-azurite/automated-testing-with-azure/
-- bash: |
-    npm install -g azurite
-    mkdir azurite
-    azurite --silent --location azurite &
-  displayName: "Install and Run Azurite"
-```
 </details>
