@@ -583,9 +583,9 @@ This is what is [written in SonarQube's documentation](https://docs.sonarsource.
 
 So the paths to the test results is implicitly set (it relies on them being in `$(Agent.TempDirectory)/TestResults` and after that checks a few other "reasonable" places) AND the binary `.coverage` format is automatically converted to XML. In my opinion this way of doing it involves way too much "magic" and is just needlessly confusing if you are not using this exact setup... 
 
-Either way, if you are not running on a Windows image (which you [should avoid for performance reasons](#-run-on-linux-based-agents-when-possible)) then you need to do this yourself instead.
+Either way, if you are not running on a Windows image (which you [should avoid for performance reasons](#-always-run-the-pipeline-on-a-linux-based-agent-)) then you need to do this yourself instead.
 
-Converting `.coverage` to XML (this was also refenced in [this chapter](#-avoid-the-publishcodecoverageresults1-task-due-to-poor-performance):
+Converting `.coverage` to XML (this was also refenced in [this chapter](#-avoid-the-publishcodecoverageresults1-task-due-to-poor-performance-):
 
 ```yaml
 - task: DotNetCoreCLI@2
@@ -626,7 +626,12 @@ Specifying test result paths:
 </details>
 
 ## Azure Pipeline-related tips
-### > Azure DevOps pipeline templates
+
+<details>
+  <summary>
+    <h3> Azure DevOps pipeline templates </h3>
+  </summary>
+
 You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
 
 The way this works is that you can first define some kind of YAML code in one repository, say `TemplateRepository` in the `Infrastructure` project in Azure DevOps:
@@ -662,7 +667,13 @@ steps:
       message: "My cool message"
 ```
 
-### > Conditions for pipeline templates
+</details>
+
+<details>
+  <summary>
+    <h3> Conditions for pipeline templates </h3>
+  </summary>
+
 There is no support for the [`condition` keyword](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/conditions) when using templates, meaning you cannot write something like this:
 
 ```yaml
@@ -679,7 +690,13 @@ What you CAN do though is define the condition like this:
 
 and that will work.
 
-### > Working directory when checking out multiple repositories
+</details>
+
+<details>
+  <summary>
+    <h3> Working directory when checking out multiple repositories </h3>
+  </summary>
+  
 If you are using pipeline templates and want to for example use script files from the repository that the template YAML file is checked into, you can accomplish this by [checking out multiple repositories](https://learn.microsoft.com/en-us/azure/devops/pipelines/repos/multi-repo-checkout?view=azure-devops) in the pipeline. So you are both checking out the repository that is using the template repository as a resource and the template repository itself:
 
 TemplateRepository/templates/mytemplate.yml:
@@ -707,7 +724,13 @@ But if you are checking out more than one repo then the working directory will b
     - Test2.txt
 ```
 
-### > Running tests in pipeline that require "Azurite"
+</details>
+
+<details>
+  <summary>
+    <h3> Running tests in pipeline that require "Azurite" </h3>
+  </summary>
+
 If you are running tests that require a local "Azurite" instance, for example for emulating Azure Storage, then you need a way to duplicate this functionality when running these tests in your CI pipeline.
 
 One way to do that is to add this task:
@@ -723,7 +746,12 @@ One way to do that is to add this task:
 ```
   
 ## .NET-related tips
-### > Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task
+
+<details>
+  <summary>
+    <h3> Setting "testRunTitle" when running the "DotNetCoreCLI@2" or "VSTest@2" task </h3>
+  </summary>
+
 You can customize the value of the `testRunTitle` parameter for both the [DotNetCoreCLI@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.%20Optional.%20Use) task and the [VSTest@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=testRunTitle%20%2D-,Test%20run%20title,-string.) task.
 
 For example:
@@ -741,8 +769,14 @@ This will make the results that show up in the test results tab in Azure DevOps 
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/202e8372-0e13-4636-814f-d7581b171dec)
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/b8f36dd0-3de1-434b-af30-14117e3db34f)
- 
-### > Issues related to specifying a local NuGet feed in `nuget.config`
+
+</details>
+
+<details>
+  <summary>
+    <h3> Issues related to specifying a local NuGet feed in `nuget.config` </h3>
+  </summary>
+  
 If you have specified a local NuGet feed in a `nuget.config` file in the root of your repository, like this:
 
 ```xml
@@ -818,7 +852,13 @@ We also use the `--no-build` argument when running the tests:
 
 - [More info](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines#why-is-my-build-publish-or-test-step-failing-to-restore-packages)
 
-### > Running tests after building a solution with both .NET Core & .NET Framework-based test projects
+</details>
+
+<details>
+  <summary>
+    <h3> Running tests after building a solution with both .NET Core & .NET Framework-based test projects </h3>
+  </summary>
+
 If you are running a pipeline that is building a solution with a mix of .NET Core & .NET Framework projects then you can run into issues if you run the [`VSTest` task](https://learn.microsoft.com/sv-se/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines) after that. 
 
 This seems to be because the task gets "confused" about what test adapter to use during this run. A way to solve this is to utilize the `pathtoCustomTestAdapters` property and point to one of the .NET Framework projects in the solution (it doesn't matter which one):
@@ -834,3 +874,4 @@ This seems to be because the task gets "confused" about what test adapter to use
     configuration: "Release"
     pathtoCustomTestAdapters: "Tests/MyTestProject/bin/Release/net472/ # <----
 ```
+</details>
