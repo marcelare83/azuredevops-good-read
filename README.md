@@ -260,7 +260,7 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
 ### > Gathering code coverage from parallel jobs
 ...
 
-### > Enabling collecting of code coverage during test execution
+### > How to enable collecting of code coverage during test execution
 - DotNetCoreCLI@2
 
 ```yaml
@@ -289,7 +289,7 @@ Note that you can specify the argument like this `--collect "Code Coverage;Forma
     codeCoverageEnabled: true # <----
 ```
 
-### Code coverage results in PRs in Azure DevOps
+### > Code coverage results in PRs in Azure DevOps
 [There is support](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops) for showing code coverage information for Pull Requests in Azure DevOps, if you have it enabled it shows up like this:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/7326a09a-04f3-4eee-b685-262ca603e032)
@@ -313,10 +313,18 @@ To enable this you need to:
 
 ## SonarQube
 ### > Running the "SonarQubePrepare@5" and "SonarQubeAnalyze@5" tasks in different jobs
-...
+There are two main SonarQube-related tasks available in Azure DevOps:
+- [SonarQubePrepare@5](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sonar-qube-prepare-v5?view=azure-pipelines)
+- [SonarQubeAnalyze@5](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/sonar-qube-analyze-v5?view=azure-pipelines)
+
+From what I've read, seen, and tried, these two tasks **HAVE** to be run in the same job, otherwise the analysis step fails. I don't know specifically what the prepare step does and there isn't a lot of documentation about that either, but there is some kind of magic that happens behind the scenes. All I know is that part of what happens is that it creates a hidden `.sonarqube` folder in the working directory with a bunch of files. I even tried copying the entire working folder to another agent after the prepare step and then running analyze and that still didn't work...
+
+What this means is that you cannot optimize the pipeline to do something along the lines of running one job that prepares the analysis and builds the source code in parallel with test jobs and then end with a job that run the SonarQube analysis. Instead you need to either run everything in one big job, or have one job that prepares the analysis, builds the source code, and then waits to download the test results from separate jobs before running the analysis (this leads to timing issues etc.).
+
+_Either way, it is annoying..._
 
 ### > Getting unit test results into SonarQube
-This is configured through the ["Test execution parameters"](https://docs.sonarsource.com/sonarqube/9.9/analyzing-source-code/test-coverage/test-execution-parameters/) in SonarQube and specified in the "SonarQubePrepare@5" task.
+This is configured through the ["Test execution parameters"](https://docs.sonarsource.com/sonarqube/9.9/analyzing-sources-code/test-coverage/test-execution-parameters/) in SonarQube and specified in the "SonarQubePrepare@5" task.
 
 For C# it could look like this:
 
@@ -338,10 +346,10 @@ This test result report is what makes this information show up in SonarQube:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/3bb97775-d70a-4f61-980f-1370dc550006)
 
-### > Supported code coverage formats
-SonarQube only supports certain code coverage formats for certain languages. 
+### > Be mindful of supported code coverage formats in SonarQube
+Keep in mind that SonarQube only supports [certain code coverage formats for certain languages](https://docs.sonarsource.com/sonarqube/9.9/analyzing-source-code/test-coverage/test-coverage-parameters/).
 
-- The "Cobertura" code coverage format doesn't work together with C# for SonarQube...?
+For example: The "Cobertura" code coverage format is not supported for `C#`, but it is supported for `Flex` and `Python`. This can become confusing because "Cobertura" shows up as a popular code coverage format in a lot of C# articles etc. So even though it is fully possible to generate this format "out-of-the-box" for C# code, SonarQube won't see it as valid.
 
 ### > SonarQube + .NET + Windows-based agent
 - https://docs.sonarsource.com/sonarqube/9.9/analyzing-source-code/test-coverage/dotnet-test-coverage/#visual-studio-code-coverage
