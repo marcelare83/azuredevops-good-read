@@ -1,4 +1,4 @@
-![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/f914bef3-b28c-4df9-a9cd-1af7014b78fb)# Lessons learned - Azure DevOps pipelines + .NET + SonarQube
+# Lessons learned - Azure DevOps pipelines + .NET + SonarQube
 
 ## Performance-related tips
 ### > Run on Linux-based agents when possible
