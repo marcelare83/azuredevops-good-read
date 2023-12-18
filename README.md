@@ -381,7 +381,11 @@ If you
 ${{ if ne(variables['Build.Reason'], 'PullRequest') }}
 ```
 
-### > Tests run in pipeline that require "Azurite"
+### > Running tests in pipeline that require "Azurite"
+If you are running tests that require a local "Azurite" instance, for example for emulating Azure Storage, then you need a way to duplicate this functionality when running these tests in your CI pipeline.
+
+One way to do that is to add this task:
+
 ```yaml
 # Azurite is required for some tests to run as expected
 # See: https://learn.microsoft.com/en-us/samples/azure-samples/automated-testing-with-azurite/automated-testing-with-azure/
