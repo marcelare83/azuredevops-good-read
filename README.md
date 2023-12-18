@@ -3,6 +3,11 @@
 - [Performance-related tips](#performance-related-tips)
   - [> Run on Linux-based agents when possible](#-run-on-linux-based-agents-when-possible)
   - [> Run multiple jobs in parallel when possible](#-run-multiple-jobs-in-parallel-when-possible)
+  - [> Limit frequency of static code analysis runs](#-limit-frequency-of-static-code-analysis-runs)
+  - [> Avoid unnecessary .NET project building due to implicit restore & build](#-avoid-unnecessary-net-project-building-due-to-implicit-restore--build)
+  - [> Avoid the "PublishCodeCoverageResults@1" task due to poor performance](#-avoid-the-publishcodecoverageresults1-task-due-to-poor-performance)
+- [Code coverage-related tips](#code-coverage-related-tips)
+  - [> How to produce code coverage results from parallel jobs]
 
 ---
 <details>
@@ -208,7 +213,7 @@ This will result in you being able to take advantage of the faster publishing sp
   </summary>
   
 ## Code coverage-related tips
-### > Gathering code coverage from parallel jobs
+### > How to produce code coverage results from parallel jobs
 Even though it requires some extra work, it _is_ possible to collect code coverage from multiple parallel jobs, which allows you to significantly improve performance for large solutions with long build times and many tests (see [performance-related tips](#performance-related-tips)).
 
 - Run all tests in multiple jobs, in each job you need to checkout the code, build the relevant code and then run the tests, make sure you specify that code coverage should be collected. You then need to publish the test results (`.coverage` and `.trx` files) so we can download them in the job that is going to run the actual SonarQube analysis:
