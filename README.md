@@ -44,7 +44,7 @@ Keep in mind that as you increase the number of parallel jobs that are being run
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/6df852e3-f12e-4e79-9072-c2858490edeb)
 
 ### > Limit frequency of static code analysis runs
-If you are using some kind of tool for static code analysis, such as SonarQube, keep in mind that doing this on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis (at least when it comes to SonarQube). Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
+If you are using some kind of tool for static code analysis, such as [SonarQube](https://www.sonarsource.com/products/sonarqube/), keep in mind that doing this on a medium to large solution adds a significant amount of time to the build process as well as taking time to run the actual analysis (at least when it comes to SonarQube). Therefore a good way to save time is to reduce this analysis when it is not "required" (based on preferences and/or organizational policies).
 
 One way to achieve this is to create a script like this (this is a PowerShell example):
 
