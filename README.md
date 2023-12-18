@@ -2,8 +2,7 @@
 
 - [Performance-related tips](#performance-related-tips)
   - [> Run on Linux-based agents when possible](#-run-on-linux-based-agents-when-possible)
-  - [> Run as many jobs in parallel as you can](#-run-as-many-jobs-in-parallel-as-you-can)
-    > 
+  - [> Run multiple jobs in parallel when possible](#-run-as-many-jobs-in-parallel-as-you-can)
 
 <details>
   <summary>
@@ -23,7 +22,7 @@ pool:
 
 This in itself means you should avoid using the [VSBuild@1](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vsbuild-v1?view=azure-pipelines) and [VSTest@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines) tasks as these can only be run on a Windows-based agent. You should instead use the [DotNetCoreCLI@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines) task for building/restoring/testing .NET code.
 
-### > Run as many jobs in parallel as you can
+### > Run multiple jobs in parallel when possible
 A great way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job. A `job` in Azure DevOps will automatically run on a separate agent, and thus run in parallel, as opposed to a separate step or task that will run sequentially on the same agent. In the following example, Job A & Job B will run at the same time:
 
 ```yaml
