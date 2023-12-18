@@ -200,6 +200,69 @@ Combining both these things could look like this:
 
 This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
 
+</details>
+
+<details>
+  
+## Code coverage-related tips
+### > Gathering code coverage from parallel jobs
+...
+
+### > How to enable collecting of code coverage during test execution
+- DotNetCoreCLI@2
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/MyTestProject.csproj"
+    arguments: >
+      --collect "Code Coverage" # <----
+```
+
+Note that you can specify the argument like this `--collect "Code Coverage;Format=Xml"` to collect the coverage information in an XML format instead of the binary `.coverage` format.
+
+- VSTest@2
+
+```yaml
+- task: VSTest@2
+  displayName: "🔬 VS Test"
+  inputs:
+    testAssemblyVer2: |
+      Tests/**/MyTestProject.dll
+      !**/obj/**
+    platform: "AnyCPU"
+    configuration: "Release"
+    codeCoverageEnabled: true # <----
+```
+
+### > Code coverage results in PRs in Azure DevOps
+[There is support](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops) for showing code coverage information for Pull Requests in Azure DevOps, if you have it enabled it shows up like this:
+
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/7326a09a-04f3-4eee-b685-262ca603e032)
+
+To enable this you need to:
+1. Add build validation for the target branch so that a new build is run and checked when a new PR is opened
+2. In your build pipeline you need to enable gathering of code coverage* from your test runs and publish the results then you will "automatically" get code coverage information in the PR as shown above:
+
+    ```yaml
+    - task: DotNetCoreCLI@2
+      displayName: "🔬 dotnet test"
+      inputs:
+        command: "test"
+        projects: "**/MyTestProject.csproj"
+        publishTestResults: true # <----
+        arguments: >
+          --collect "Code Coverage" # <----
+    ```
+    
+\* **Note that only the binary `.coverage` format is [currently supported](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops#which-coverage-tools-and-result-formats-can-be-used-for-validating-code-coverage-in-pull-requests), so you need to make sure you are publishing this format** 
+
+</details>
+
+<details>
+  
 ## Various "gotchas" to watch out for
 ### > Running "dotnet tool install" on Linux
 If you run the `dotnet tool install` command in a task on an agent running on a Linux-based OS w/ a project that has multiple project files you might run into issues where the task fails to complete with an error message along the lines of the folder containing multiple project files. I think this is related to the fact that .NET Core CLI will automatically restore any .NET projects in the working directory and does not like if there are multiple of them. The process of installing a new dotnet tool does not require this to happen, so it is ostensibly a bug, but I might be missing something.
@@ -270,65 +333,6 @@ The solution was taken from [this forum post](https://stackoverflow.com/a/627122
 Note that the "DotNetCoreCLI@2" task puts test results in `$(Agent.TempDirectory)` whereas the legacy "VSTest@2" task puts it in `$(Agent.TempDirectory)/TestResults`.
 
 This location can be re-configured for the "VSTest@2" using the [`resultsFolder` parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=resultsFolder%20%2D-,Test%20results%20folder,-string.%20Default%20value).
-
-</details>
-
-<details>
-  
-## Code coverage-related tips
-### > Gathering code coverage from parallel jobs
-...
-
-### > How to enable collecting of code coverage during test execution
-- DotNetCoreCLI@2
-
-```yaml
-- task: DotNetCoreCLI@2
-  displayName: "🔬 dotnet test"
-  inputs:
-    command: "test"
-    projects: "**/MyTestProject.csproj"
-    arguments: >
-      --collect "Code Coverage" # <----
-```
-
-Note that you can specify the argument like this `--collect "Code Coverage;Format=Xml"` to collect the coverage information in an XML format instead of the binary `.coverage` format.
-
-- VSTest@2
-
-```yaml
-- task: VSTest@2
-  displayName: "🔬 VS Test"
-  inputs:
-    testAssemblyVer2: |
-      Tests/**/MyTestProject.dll
-      !**/obj/**
-    platform: "AnyCPU"
-    configuration: "Release"
-    codeCoverageEnabled: true # <----
-```
-
-### > Code coverage results in PRs in Azure DevOps
-[There is support](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops) for showing code coverage information for Pull Requests in Azure DevOps, if you have it enabled it shows up like this:
-
-![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/7326a09a-04f3-4eee-b685-262ca603e032)
-
-To enable this you need to:
-1. Add build validation for the target branch so that a new build is run and checked when a new PR is opened
-2. In your build pipeline you need to enable gathering of code coverage* from your test runs and publish the results then you will "automatically" get code coverage information in the PR as shown above:
-
-    ```yaml
-    - task: DotNetCoreCLI@2
-      displayName: "🔬 dotnet test"
-      inputs:
-        command: "test"
-        projects: "**/MyTestProject.csproj"
-        publishTestResults: true # <----
-        arguments: >
-          --collect "Code Coverage" # <----
-    ```
-    
-\* **Note that only the binary `.coverage` format is [currently supported](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops#which-coverage-tools-and-result-formats-can-be-used-for-validating-code-coverage-in-pull-requests), so you need to make sure you are publishing this format** 
 
 </details>
 
