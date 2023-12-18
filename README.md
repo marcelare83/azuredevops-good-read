@@ -211,7 +211,7 @@ This will result in you being able to take advantage of the faster publishing sp
 ### > Gathering code coverage from parallel jobs
 Even though it requires some extra work, it _is_ possible to collect code coverage from multiple parallel jobs, which allows you to significantly improve performance for large solutions with long build times and many tests (see [performance-related tips](#performance-related-tips)).
 
-1. Run all tests in multiple jobs, in each job you need to checkout the code, build the relevant code and then run the tests, make sure you specify that code coverage should be collected. You then need to publish the test results (`.coverage` and `.trx` files) so we can download them in the job that is going to run the actual SonarQube analysis:
+- Run all tests in multiple jobs, in each job you need to checkout the code, build the relevant code and then run the tests, make sure you specify that code coverage should be collected. You then need to publish the test results (`.coverage` and `.trx` files) so we can download them in the job that is going to run the actual SonarQube analysis:
 
 ```yaml
   ############################
@@ -258,7 +258,103 @@ Even though it requires some extra work, it _is_ possible to collect code covera
       artifactName: ${{ parameters.jobName }}
 ```
 
-2. You will also need to have one job that prepares the analysis, builds the source code and runs the analysis. It is _not_ possible to split the actual analysis and the preparation/building (more info [here](
+- You will also need to have one job that prepares the analysis, builds the source code and runs the analysis. It is _not_ possible to split the actual analysis and the preparation/building (more info [here](#-unable-to-run-the-sonarqubeprepare5-and-sonarqubeanalyze5-tasks-in-different-jobs)).
+- In the preparation step you will need to specify the path where SonarQube can find the test result files (`.trx`) and the code coverage files (will be converted from `.coverage` to `.xml`):
+```yaml
+- task: SonarQubePrepare@5
+  displayName: "SonarQube: Prepare"
+  inputs:
+    SonarQube: "SonarQube"
+    scannerMode: "MSBuild"
+    projectKey: "PROJECT_KEY"
+    projectName: "PROJECT_NAME"
+    extraProperties: |
+      sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/TestResults/merged.coverage.xml
+      sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/TestResults/*/*.trx
+```
+
+- After we build the source code but before performing the SonarQube analysis we need to download all the test run result artifacts that were published using the `PublishPipelineArtifact@1` task:
+```yaml
+- task: DownloadPipelineArtifact@2
+  displayName: "Download test run artifacts"
+  inputs:
+    targetPath: $(Agent.TempDirectory)/TestResults
+```
+**Note that if the tests take longer to run than building the project then the pipeline will attempt to download the test run artifacts before they are available which will result in the results in SonarQube being incorrect. You can potentially solve this with a delay (or in some more sophisticated way using a script and Azure CLI)**:
+
+```yaml
+- task: PowerShell@2
+  displayName: "⏳ Delay for 2 minutes to wait for test result artifacts to be available"
+  inputs:
+    targetType: inline
+    script: "Start-Sleep -Seconds 120"
+
+- task: DownloadPipelineArtifact@2
+  displayName: "Download test run artifacts"
+  inputs:
+    targetPath: $(Agent.TempDirectory)/TestResults
+```
+
+- We then convert the code coverage files to XML and merge them into one big file using the [`dotnet-coverage` tool](https://learn.microsoft.com/en-us/dotnet/core/additional-tools/dotnet-coverage) (note that we output the final result in the path that we specified in the SonarQube preparation task):
+
+```yaml
+- task: PowerShell@2
+  displayName: "Install the 'dotnet-coverage' tool"
+  inputs:
+    targetType: inline
+    script: dotnet tool install dotnet-coverage --global --ignore-failed-sources
+
+- script: >
+    dotnet-coverage merge -o $(Agent.TempDirectory)/TestResults/merged.coverage.xml -f xml -r $(Agent.TempDirectory)/TestResults/*.coverage --remove-input-files
+  displayName: "Merge and re-format code coverage files to XML"
+```
+
+- The final step we have to do is fix the path information in the code coverage files. This is because when the files are generated, they retain information about the relative path to the source file that is being tested:
+
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/117f0948-a4d6-40a8-9e8b-c19832a412e4)
+
+Because these files were generated on different agents, the part of the path information that refers to the agent (`C:\agent2\_work`) will not be the same as the path for the source files on the agent we downloaded the results to. We have to fix this manually, otherwise SonarQube won't recognize the coverage information as valid. We can do that like this:
+
+```yaml
+- task: PowerShell@2
+  displayName: "Fix code coverage file paths in merged.coverage.xml"
+  inputs:
+    targetType: filePath
+    filePath: build/scripts/Fix-CodeCoverageFilePaths.ps1
+    arguments: -pathToCoverageFile "$(Agent.TempDirectory)/TestResults/merged.coverage.xml"
+  condition: and(succeeded(), eq(variables.sonarQubeShouldBeRun, true))
+```
+
+The script this task uses looks like this:
+
+```powershell
+# When generating code coverage reports, the paths to the source files are stored in the code coverage file.
+# Because we run multiple test jobs on different agents in parallel, it leads to the code coverage file paths being different on each agent.
+# This script fixes the paths in the code coverage file so that they are correct from the point-of-view of the agent running the code coverage analysis.
+
+Param(
+    [string]$pathToCoverageFile
+)
+
+Write-Host "Fixing file paths in code coverage file '$pathToCoverageFile'..."
+
+$localPath = (Get-Location).Path
+$linuxFilePattern = '/home/vsts/work/\d+/s'
+$onPremWindowsFilePattern = 'C:\\agent\\_work\\\d+\\s'
+(Get-Content -path $pathToCoverageFile -Raw) -replace $linuxFilePattern, $localPath -replace $onPremWindowsFilePattern, $localPath | Set-Content $pathToCoverageFile
+```
+
+- After this we can finally run the analysis step:
+
+```yaml
+- task: SonarQubeAnalyze@5
+  displayName: "SonarQube: Run analysis"
+```
+
+- We should then get both code coverage information and test results into SonarQube:
+
+![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/70972161-7cc6-4a6a-891f-c1f168df0565)
+
 ### > How to enable collecting of code coverage during test execution
 - DotNetCoreCLI@2
 
