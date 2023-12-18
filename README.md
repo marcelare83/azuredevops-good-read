@@ -1,21 +1,10 @@
 # Lessons learned - Azure Pipelines, Code Coverage, .NET, SonarQube
 
-- [Performance-related tips](#performance-related-tips)
-  - [> Run on Linux-based agents when possible](#-run-on-linux-based-agents-when-possible)
-  - [> Run multiple jobs in parallel when possible](#-run-multiple-jobs-in-parallel-when-possible)
-  - [> Limit frequency of static code analysis runs](#-limit-frequency-of-static-code-analysis-runs)
-  - [> Avoid unnecessary .NET project building due to implicit restore & build](#-avoid-unnecessary-net-project-building-due-to-implicit-restore--build)
-  - [> Avoid the "PublishCodeCoverageResults@1" task due to poor performance](#-avoid-the-publishcodecoverageresults1-task-due-to-poor-performance)
-- [Code coverage-related tips](#code-coverage-related-tips)
-  - [> How to produce code coverage results from parallel jobs](#-how-to-produce-code-coverage-results-from-parallel-jobs)
-  - 
-
----
 ## Performance-related tips
 
 <details>
   <summary>
-    <h3> Run on Linux-based agents </h3>
+    <h3> Always run the pipeline on a Linux-based agent </h3>
   </summary>
 
 When possible, always run the pipeline on a Linux-based agent instead of a Windows-based one. In my experience this can reduce the runtime by up to 50%, depending on the pipeline workload:
@@ -163,7 +152,11 @@ The `--no-build` flag will skip building the test project before running it, it 
 
 </details>
 
-### > Avoid the "PublishCodeCoverageResults@1" task due to poor performance
+<details>
+  <summary>
+    <h3> Avoid the "PublishCodeCoverageResults@1" task due to poor performance </h3>
+  </summary>
+
 The [`PublishCodeCoverageResults@1`](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-code-coverage-results-v1?view=azure-pipelines) task in Azure DevOps is used to take already produced code coverage results (JaCoCo / Cobertura format) and publish it to the pipeline. This makes the code coverage results show up as a tab in the pipeline run summary in Azure DevOps:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/e806df44-f98d-4d44-805b-9d3c1c256a30)
@@ -213,9 +206,51 @@ Combining both these things could look like this:
 ```
 
 This will result in you being able to take advantage of the faster publishing speed of doing it using the `DotNetCoreCLI@2` task while also being able to output the code coverage results in a more generic format (for SonarQube for example).
+
+</details>
   
 ## Code coverage-related tips
-### > How to produce code coverage results from parallel jobs
+
+<details>
+  <summary>
+    <h3> How to enable collecting of code coverage during test execution </h3>
+  </summary>
+
+- DotNetCoreCLI@2
+
+```yaml
+- task: DotNetCoreCLI@2
+  displayName: "🔬 dotnet test"
+  inputs:
+    command: "test"
+    projects: "**/MyTestProject.csproj"
+    arguments: >
+      --collect "Code Coverage" # <----
+```
+
+Note that you can specify the argument like this `--collect "Code Coverage;Format=Xml"` to collect the coverage information in an XML format instead of the binary `.coverage` format.
+
+- VSTest@2
+
+```yaml
+- task: VSTest@2
+  displayName: "🔬 VS Test"
+  inputs:
+    testAssemblyVer2: |
+      Tests/**/MyTestProject.dll
+      !**/obj/**
+    platform: "AnyCPU"
+    configuration: "Release"
+    codeCoverageEnabled: true # <----
+```
+
+</details>
+
+<details>
+  <summary>
+    <h3> How to produce code coverage results from parallel jobs </h3>
+  </summary>
+
 Even though it requires some extra work, it _is_ possible to collect code coverage from multiple parallel jobs, which allows you to significantly improve performance for large solutions with long build times and many tests (see [performance-related tips](#performance-related-tips)).
 
 - Run all tests in multiple jobs, in each job you need to checkout the code, build the relevant code and then run the tests, make sure you specify that code coverage should be collected. You then need to publish the test results (`.coverage` and `.trx` files) so we can download them in the job that is going to run the actual SonarQube analysis:
@@ -362,36 +397,13 @@ $onPremWindowsFilePattern = 'C:\\agent\\_work\\\d+\\s'
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/70972161-7cc6-4a6a-891f-c1f168df0565)
 
-### > How to enable collecting of code coverage during test execution
-- DotNetCoreCLI@2
+</details>
 
-```yaml
-- task: DotNetCoreCLI@2
-  displayName: "🔬 dotnet test"
-  inputs:
-    command: "test"
-    projects: "**/MyTestProject.csproj"
-    arguments: >
-      --collect "Code Coverage" # <----
-```
-
-Note that you can specify the argument like this `--collect "Code Coverage;Format=Xml"` to collect the coverage information in an XML format instead of the binary `.coverage` format.
-
-- VSTest@2
-
-```yaml
-- task: VSTest@2
-  displayName: "🔬 VS Test"
-  inputs:
-    testAssemblyVer2: |
-      Tests/**/MyTestProject.dll
-      !**/obj/**
-    platform: "AnyCPU"
-    configuration: "Release"
-    codeCoverageEnabled: true # <----
-```
-
-### > Code coverage results in PRs in Azure DevOps
+<details>
+  <summary>
+    <h3> Code coverage results in PRs in Azure DevOps </h3>
+  </summary>
+  
 [There is support](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops) for showing code coverage information for Pull Requests in Azure DevOps, if you have it enabled it shows up like this:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/7326a09a-04f3-4eee-b685-262ca603e032)
@@ -412,9 +424,16 @@ To enable this you need to:
     ```
     
 \* **Note that only the binary `.coverage` format is [currently supported](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/codecoverage-for-pullrequests?view=azure-devops#which-coverage-tools-and-result-formats-can-be-used-for-validating-code-coverage-in-pull-requests), so you need to make sure you are publishing this format** 
+
+</details>
   
 ## Various "gotchas" to watch out for
-### > Running "dotnet tool install" on Linux
+
+<details>
+  <summary>
+    <h3> Running "dotnet tool install" on Linux </h3>
+  </summary>
+  
 If you run the `dotnet tool install` command in a task on an agent running on a Linux-based OS w/ a project that has multiple project files you might run into issues where the task fails to complete with an error message along the lines of the folder containing multiple project files. I think this is related to the fact that .NET Core CLI will automatically restore any .NET projects in the working directory and does not like if there are multiple of them. The process of installing a new dotnet tool does not require this to happen, so it is ostensibly a bug, but I might be missing something.
 
 One way to get around this issue is to set the ["workingDirectory" parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/powershell-v2?view=azure-pipelines#:~:text=workingDirectory%20%2D-,Working%20Directory,-string.) to an arbitrary folder in the repository that does **not** contain any `.csproj` files at all:
@@ -428,7 +447,13 @@ One way to get around this issue is to set the ["workingDirectory" parameter](ht
     script: dotnet tool install dotnet-coverage --global --ignore-failed-sources
 ```
 
-### > The "PublishPipelineArtifact" task doesn't flatten folders
+</details>
+
+<details>
+  <summary>
+    <h3> The "PublishPipelineArtifact" task doesn't flatten folders </h3>
+  </summary>
+
 If you have a need to publish and download artifacts between different jobs in a pipeline you can use the [PublishPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/publish-pipeline-artifact-v1?view=azure-pipelines) and [DownloadPipelineArtifact](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/download-pipeline-artifact-v2?view=azure-pipelines) tasks in Azure DevOps. One thing to keep in mind when doing this is that the "PublishPipelineArtifact" task doesn't flatten folders, i.e. if you download an artifact "MyCoolArtifact1" & "MyCoolArtifact2" with some arbitrary files into "MyFolder", then it will result in the files being put into `MyFolder/MyCoolArtifact1` and `MyFolder/MyCoolArtifact2` instead of directly into `MyFolder/...`.
 
 One way solve this is to first download the pipeline artifacts and then use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/copy-files-v2?view=azure-pipelines&tabs=yaml) task w/ the `flattenFolders` parameter set to `true`:
@@ -472,7 +497,13 @@ You instead need to write it like this (without quotes), otherwise the files won
 
 More information about this bug can be found [in this forum post](https://stackoverflow.com/a/70874760).
 
-### > Installing new software on a self-hosted agent could require a restart before it takes effect
+</details>
+
+<details>
+  <summary>
+    <h3> Installing new software on a self-hosted agent could require a restart before it takes effect </h3>
+  </summary>
+  
 If you are running your pipeline on a self-hosted agent and have tasks that install new software, for example using `dotnet tool install`, then a restart of the agent could be required for it to recognize this new tool/software.
 
 > I noticed this when I tried installing the `dotnet-coverage` tool and it said it was already installed but at the same time when trying to use it in a task it said it wasn't installed, leading to a catch-22. Restarting the agent solved this issue.
@@ -496,7 +527,13 @@ What this means is that you cannot optimize the pipeline to do something along t
 
 _Either way, it is annoying..._
 
-### > Getting unit test results into SonarQube
+</details>
+
+<details>
+  <summary>
+    <h3> Getting unit test results into SonarQube </h3>
+  </summary>
+
 This is configured through the ["Test execution parameters"](https://docs.sonarsource.com/sonarqube/9.9/analyzing-sources-code/test-coverage/test-execution-parameters/) in SonarQube and specified in the "SonarQubePrepare@5" task.
 
 For C# it could look like this:
@@ -519,14 +556,26 @@ This test result report is what makes this information show up in SonarQube:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/3bb97775-d70a-4f61-980f-1370dc550006)
 
-### > Be mindful of supported code coverage formats in SonarQube
+</details>
+
+<details>
+  <summary>
+    <h3> Be mindful of supported code coverage formats in SonarQube </h3>
+  </summary>
+  
 Keep in mind that SonarQube only supports [certain code coverage formats for certain languages](https://docs.sonarsource.com/sonarqube/9.9/analyzing-source-code/test-coverage/test-coverage-parameters/).
 
 For example: The "Cobertura" code coverage format is not supported for `C#`, but it is supported for `Flex` and `Python`. This can become confusing because "Cobertura" shows up as a popular code coverage format in a lot of C# articles etc. So even though it is fully possible to generate this format "out-of-the-box" for C# code, SonarQube won't see it as valid.
 
 Also, the binary `.coverage` format that is generated by default when collecting code coverage info in .NET is **not** supported by SonarQube, but at the same time this is the expected format when publishing test results to the Azure DevOps pipeline. Therefore it is recommended to collect this data in the binary format and then re-format it into a XML format that is compatible w/ SonarQube before running the analysis step.
 
-### > SonarQube + .NET + Windows-based agent = Magic?
+</details>
+
+<details>
+  <summary>
+    <h3> SonarQube + .NET + Windows-based agent = Magic? </h3>
+  </summary>
+
 If you are analyzing .NET code using SonarQube and are using a Windows-based agent, then there seems to be some convention-based magic happening behind the scenes that is good to know about.
 
 This is what is [written in SonarQube's documentation](https://docs.sonarsource.com/sonarqube/9.9/analyzing-source-code/test-coverage/dotnet-test-coverage/#visual-studio-code-coverage):
@@ -572,8 +621,10 @@ Specifying test result paths:
     extraProperties: |
       sonar.cs.vscoveragexml.reportsPaths=$(Agent.TempDirectory)/TestResults/.coverage.xml # <---- 
       sonar.cs.vstest.reportsPaths=$(Agent.TempDirectory)/TestResults/*/*.trx # <---- 
-``` 
-  
+```
+
+</details>
+
 ## Azure Pipeline-related tips
 ### > Azure DevOps pipeline templates
 You can utilize [templates](https://learn.microsoft.com/en-us/azure/devops/pipelines/process/templates?view=azure-devops&pivots=templates-includes) in Azure DevOps to define reusable content, logic, and parameters in YAML pipelines.
