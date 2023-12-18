@@ -18,7 +18,13 @@ pool:
 
 This in itself means you should avoid using the [VSBuild@1](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vsbuild-v1?view=azure-pipelines) and [VSTest@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines) tasks as these can only be run on a Windows-based agent. You should instead use the [DotNetCoreCLI@2](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/dotnet-core-cli-v2?view=azure-pipelines) task for building/restoring/testing .NET code.
 
-### > Run multiple jobs in parallel
+</details>
+
+<details>
+  <summary>
+    <h4> Run multiple jobs in parallel </h4>
+  </summary>
+
 A great way to reduce the total time a build takes is to run multiple smaller jobs in parallel instead of one big job. A `job` in Azure DevOps will automatically run on a separate agent, and thus run in parallel, as opposed to a separate step or task that will run sequentially on the same agent. In the following example, Job A & Job B will run at the same time:
 
 ```yaml
@@ -132,7 +138,13 @@ and will show up like this in the UI when queueing a new pipeline build:
 
 ![image](https://github.com/OscarBennich/lessons-learned-azure-devops-sq-dotnet/assets/26872957/92a7569e-bc34-4b2f-bd08-8a19269d7289)
 
-### > Avoid unnecessary .NET project building due to implicit restore & build
+</details>
+
+<details>
+  <summary>
+    <h4> Avoid unnecessary .NET project building due to implicit restore & build </h4>
+  </summary>
+
 Make sure you are not accidentally building a project/solution multiple times - Because of the way that the [implicit restore](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-build#implicit-restore) works for dotnet tasks it is very easy to, say, first build a solution with a project and a test project in one step, and then run the tests using the `DotNetCoreCLI@2` task, not knowing that this will trigger an additional unnecessary build of that test project. 
 
 A way to get around this is to either (a) skip the first build step and simply run the test task as this will also build and restore the project, or (b) keep the separate build task and then call the test task with the `--no-build` argument:
@@ -470,7 +482,13 @@ One way solve this is to first download the pipeline artifacts and then use the 
 
 `Contents: "**"` copies all files in the specified source folder and all files in all sub-folders. Note that this is the default value, I've explicitly added it here for the sake of clarity.
 
-### > "CopyFiles" doesn't work as expected when trying to copy multiple specific file types
+</details>
+
+<details>
+  <summary>
+    <h4> "CopyFiles" doesn't work as expected when trying to copy multiple specific file types </h4>
+  </summary>
+  
 If you want to use the ["CopyFiles@2"](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/copy-files-v2?view=azure-pipelines&tabs=yaml) task to copy specific file types (like `.xml`, `.coverage`, `.trx`) instead of all files in a specific folder, you need to make sure that you do not write it over multiple lines using single quotes, like this:
 
 ```yaml
@@ -510,7 +528,13 @@ If you are running your pipeline on a self-hosted agent and have tasks that inst
 
 The solution was taken from [this forum post](https://stackoverflow.com/a/62712205).
 
-### > Default test result folder location for "DotNetCoreCLI@2" vs. "VSTest@2"
+</details>
+
+<details>
+  <summary>
+    <h4> Default test result folder location for "DotNetCoreCLI@2" vs. "VSTest@2" </h4>
+  </summary>
+
 Note that the "DotNetCoreCLI@2" task puts test results in `$(Agent.TempDirectory)` whereas the legacy "VSTest@2" task puts it in `$(Agent.TempDirectory)/TestResults`.
 
 This location can be re-configured for the "VSTest@2" using the [`resultsFolder` parameter](https://learn.microsoft.com/en-us/azure/devops/pipelines/tasks/reference/vstest-v2?view=azure-pipelines#:~:text=resultsFolder%20%2D-,Test%20results%20folder,-string.%20Default%20value).
