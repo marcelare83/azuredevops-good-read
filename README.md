@@ -363,7 +363,7 @@ So the paths to the test results is implicitly set (I think it relies on them be
 
 Either way, if you are not running on a Windows image (which you [should avoid for performance reasons](#-run-on-linux-based-agents-when-possible)) then you need to do this yourself instead.
 
-Converting `.coverage` to XML (this was also refenced in [this chapter](#-avoid-unnecessary-net-project-building-due-to-implicit-restore--build):
+Converting `.coverage` to XML (this was also refenced in [this chapter](#-avoid-the-publishcodecoverageresults1-task-due-to-poor-performance):
 
 ```yaml
 - task: DotNetCoreCLI@2
